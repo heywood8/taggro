@@ -75,12 +75,6 @@ def register(app: Client, get_db):
             await message.reply("Channel not found or is private. Please try again.")
             return
 
-        try:
-            await client.join_chat(username)
-        except Exception as e:
-            await message.reply(f"Could not join @{username}: {e}")
-            return
-
         async with get_db() as db:
             await db.add_subscription(user_id=message.from_user.id, channel=username)
 
@@ -104,14 +98,6 @@ def register(app: Client, get_db):
         channel = callback.matches[0].group(1)
         async with get_db() as db:
             await db.remove_subscription(user_id=callback.from_user.id, channel=channel)
-            remaining = await db.get_active_subscribers(channel)
-
-        if not remaining:
-            try:
-                await callback.message._client.leave_chat(channel)
-            except Exception as e:
-                logger.warning("Could not leave %s: %s", channel, e)
-
         await callback.message.edit_text(f"Removed @{channel}.")
         await callback.answer()
 

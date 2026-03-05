@@ -6,11 +6,11 @@ from pyrogram import Client
 from contextlib import asynccontextmanager
 
 import config
+import poller
 from db import Database
 from handlers import start as start_handler
 from handlers import channels as channels_handler
 from handlers import settings as settings_handler
-from handlers import dispatcher as dispatcher_handler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,19 +31,10 @@ async def main():
     start_handler.register(app, get_db)
     channels_handler.register(app, get_db)
     settings_handler.register(app, get_db)
-    dispatcher_handler.register(app, get_db)
 
     async with app:
-        # Re-join all subscribed channels on startup
-        async with get_db() as db:
-            channels = await db.get_active_channels()
-        for channel in channels:
-            try:
-                await app.join_chat(channel)
-            except Exception as e:
-                logger.warning("Could not re-join %s: %s", channel, e)
-
-        logger.info("Bot started, monitoring %d channel(s)", len(channels))
+        logger.info("Bot started")
+        asyncio.create_task(poller.run_poller(app, get_db))
         await asyncio.Event().wait()
 
 
