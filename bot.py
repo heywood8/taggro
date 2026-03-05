@@ -33,6 +33,10 @@ async def main():
     settings_handler.register(app, get_db)
 
     async with app:
+        await app.set_bot_commands([
+            ("start", "Start the bot"),
+            ("channels", "List and manage your subscribed channels"),
+        ])
         logger.info("Bot started")
         asyncio.create_task(poller.run_poller(app, get_db))
         await asyncio.Event().wait()
