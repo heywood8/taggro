@@ -13,14 +13,14 @@ MAX_CONSECUTIVE_FAILURES = 5
 _failure_counts: dict[str, int] = {}
 
 
-async def poll_once(client: Client, db: Database):
+async def poll_once(user_client: Client, bot_client: Client, db: Database):
     channels = await db.get_active_channels()
 
     for channel in channels:
         try:
             last_id = await db.get_last_seen(channel)
             new_messages = []
-            async for msg in client.get_chat_history(channel, limit=50):
+            async for msg in user_client.get_chat_history(channel, limit=50):
                 if msg.id <= last_id:
                     break
                 new_messages.append(msg)
@@ -41,7 +41,7 @@ async def poll_once(client: Client, db: Database):
                 for sub in subscribers:
                     if should_forward(text=text, mode=sub["mode"], keywords=sub["keywords"]):
                         try:
-                            await client.forward_messages(
+                            await bot_client.forward_messages(
                                 chat_id=sub["user_id"],
                                 from_chat_id=channel,
                                 message_ids=msg.id,
@@ -69,7 +69,7 @@ async def poll_once(client: Client, db: Database):
                 subscribers = await db.get_active_subscribers(channel)
                 for sub in subscribers:
                     try:
-                        await client.send_message(
+                        await bot_client.send_message(
                             sub["user_id"],
                             f"Warning: @{channel} appears to be unavailable and may have been deleted or made private."
                         )
@@ -81,12 +81,12 @@ async def poll_once(client: Client, db: Database):
             logger.error("Unexpected error polling %s: %s", channel, e)
 
 
-async def run_poller(client: Client, get_db):
+async def run_poller(user_client: Client, bot_client: Client, get_db):
     logger.info("Poller started, interval=%ss", config.POLL_INTERVAL_SECONDS)
     while True:
         try:
             async with get_db() as db:
-                await poll_once(client, db)
+                await poll_once(user_client, bot_client, db)
         except Exception as e:
             logger.error("Poller cycle error: %s", e)
         await asyncio.sleep(config.POLL_INTERVAL_SECONDS)
