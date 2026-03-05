@@ -35,8 +35,8 @@ async def poll_once(bot: Client, db: Database, session: aiohttp.ClientSession):
                     if should_forward(text=msg["text"], mode=sub["mode"], keywords=sub["keywords"]):
                         link = f"https://t.me/{channel}/{msg['id']}"
                         body = remove_emojis(msg["text"]) if sub["strip_emojis"] else msg["text"]
-                        header = f"[{channel_title}]({link})"
-                        text = f"{header}\n\n{body}" if body else header
+                        footer = f"[{channel_title}]({link})"
+                        text = f"{body}\n\n{footer}" if body else footer
                         try:
                             await bot.send_message(
                                 chat_id=sub["user_id"],
