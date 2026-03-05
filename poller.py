@@ -20,7 +20,7 @@ async def poll_once(bot: Client, db: Database, session: aiohttp.ClientSession):
     for channel in channels:
         try:
             last_id = await db.get_last_seen(channel)
-            messages = await fetch_new_messages(session, channel, after_id=last_id)
+            channel_title, messages = await fetch_new_messages(session, channel, after_id=last_id)
 
             if not messages:
                 _failure_counts[channel] = 0
@@ -35,9 +35,14 @@ async def poll_once(bot: Client, db: Database, session: aiohttp.ClientSession):
                     if should_forward(text=msg["text"], mode=sub["mode"], keywords=sub["keywords"]):
                         link = f"https://t.me/{channel}/{msg['id']}"
                         body = remove_emojis(msg["text"]) if sub["strip_emojis"] else msg["text"]
-                        text = f"📢 @{channel}\n\n{body}\n\n{link}" if body else f"📢 @{channel}\n\n{link}"
+                        header = f"[{channel_title}]({link})"
+                        text = f"{header}\n\n{body}" if body else header
                         try:
-                            await bot.send_message(chat_id=sub["user_id"], text=text)
+                            await bot.send_message(
+                                chat_id=sub["user_id"],
+                                text=text,
+                                disable_web_page_preview=True,
+                            )
                         except Exception as e:
                             err_name = type(e).__name__
                             if "UserIsBlocked" in err_name or "InputUserDeactivated" in err_name:
