@@ -10,6 +10,7 @@ from db import Database
 from handlers import start as start_handler
 from handlers import channels as channels_handler
 from handlers import settings as settings_handler
+import poller
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +34,8 @@ async def main():
 
     async with app:
         logger.info("Bot started")
-        await asyncio.Event().wait()  # run forever
+        asyncio.create_task(poller.run_poller(app, get_db))
+        await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
