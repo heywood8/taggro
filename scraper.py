@@ -40,6 +40,11 @@ async def fetch_new_messages(session: aiohttp.ClientSession, channel: str, after
         if msg_id <= after_id:
             continue
 
+        # Remove reply-quote block so its text isn't mistaken for the message text
+        reply_block = el.find("div", class_="tgme_widget_message_reply")
+        if reply_block:
+            reply_block.decompose()
+
         text_el = el.find("div", class_="tgme_widget_message_text")
         text = text_el.get_text(separator="\n").strip() if text_el else ""
 
