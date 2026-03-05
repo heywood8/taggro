@@ -128,3 +128,18 @@ async def test_set_strip_emojis(db):
     await db.set_strip_emojis(user_id=1, channel="testchannel", strip=True)
     subs = await db.get_active_subscribers(channel="testchannel")
     assert subs[0]["strip_emojis"] is True
+
+
+@pytest.mark.asyncio
+async def test_strip_links_default_false(db):
+    await db.add_subscription(user_id=1, channel="testchannel")
+    subs = await db.get_user_subscriptions(user_id=1)
+    assert subs[0]["strip_links"] == 0
+
+
+@pytest.mark.asyncio
+async def test_set_strip_links(db):
+    await db.add_subscription(user_id=1, channel="testchannel")
+    await db.set_strip_links(user_id=1, channel="testchannel", strip=True)
+    subs = await db.get_active_subscribers(channel="testchannel")
+    assert subs[0]["strip_links"] is True

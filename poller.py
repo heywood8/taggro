@@ -5,7 +5,7 @@ from pyrogram import Client
 
 import config
 from db import Database
-from filters import should_forward, remove_emojis
+from filters import should_forward, remove_emojis, remove_links
 from scraper import fetch_new_messages
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,11 @@ async def poll_once(bot: Client, db: Database, session: aiohttp.ClientSession):
                 for sub in subscribers:
                     if should_forward(text=msg["text"], mode=sub["mode"], keywords=sub["keywords"]):
                         link = f"https://t.me/{channel}/{msg['id']}"
-                        body = remove_emojis(msg["text"]) if sub["strip_emojis"] else msg["text"]
+                        body = msg["text"]
+                        if sub["strip_emojis"]:
+                            body = remove_emojis(body)
+                        if sub["strip_links"]:
+                            body = remove_links(body)
                         footer = f"[{channel_title}]({link})"
                         text = f"{body}\n\n{footer}" if body else footer
                         try:

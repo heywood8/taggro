@@ -21,6 +21,16 @@ def remove_emojis(text: str) -> str:
     return _EMOJI_RE.sub("", text).strip()
 
 
+_URL_RE = re.compile(
+    r"https?://\S+|www\.\S+",
+    re.IGNORECASE,
+)
+
+
+def remove_links(text: str) -> str:
+    return _URL_RE.sub("", text).strip()
+
+
 def should_forward(text: Optional[str], mode: str, keywords: list[str]) -> bool:
     """Return True if the message should be forwarded to the user."""
     if mode == "all":

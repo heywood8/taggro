@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from filters import should_forward, remove_emojis
+from filters import should_forward, remove_emojis, remove_links
 
 
 def test_mode_all_forwards_everything():
@@ -58,3 +58,15 @@ def test_remove_emojis_leaves_plain_text():
 
 def test_remove_emojis_empty_string():
     assert remove_emojis("") == ""
+
+
+def test_remove_links_strips_urls():
+    assert remove_links("Check https://example.com for details") == "Check  for details"
+
+
+def test_remove_links_strips_www():
+    assert remove_links("Visit www.example.com today") == "Visit  today"
+
+
+def test_remove_links_leaves_plain_text():
+    assert remove_links("No links here") == "No links here"

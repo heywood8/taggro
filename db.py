@@ -14,6 +14,7 @@ class Database:
                 mode          TEXT    NOT NULL DEFAULT 'all',
                 active        INTEGER NOT NULL DEFAULT 1,
                 strip_emojis  INTEGER NOT NULL DEFAULT 0,
+                strip_links   INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (user_id, channel)
             );
 
@@ -30,11 +31,15 @@ class Database:
             );
         """)
         # Migration: add strip_emojis column if it doesn't exist yet
-        try:
-            await self.conn.execute("ALTER TABLE subscriptions ADD COLUMN strip_emojis INTEGER NOT NULL DEFAULT 0")
-            await self.conn.commit()
-        except Exception:
-            pass  # Column already exists
+        for col, definition in [
+            ("strip_emojis", "INTEGER NOT NULL DEFAULT 0"),
+            ("strip_links", "INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            try:
+                await self.conn.execute(f"ALTER TABLE subscriptions ADD COLUMN {col} {definition}")
+                await self.conn.commit()
+            except Exception:
+                pass  # Column already exists
 
     async def add_subscription(self, user_id: int, channel: str):
         await self.conn.execute(
@@ -60,11 +65,11 @@ class Database:
 
     async def get_user_subscriptions(self, user_id: int) -> list[dict]:
         async with self.conn.execute(
-            "SELECT channel, mode, active, strip_emojis FROM subscriptions WHERE user_id = ?",
+            "SELECT channel, mode, active, strip_emojis, strip_links FROM subscriptions WHERE user_id = ?",
             (user_id,),
         ) as cursor:
             rows = await cursor.fetchall()
-        return [{"channel": r[0], "mode": r[1], "active": r[2], "strip_emojis": r[3]} for r in rows]
+        return [{"channel": r[0], "mode": r[1], "active": r[2], "strip_emojis": r[3], "strip_links": r[4]} for r in rows]
 
     async def add_keyword(self, user_id: int, channel: str, keyword: str):
         await self.conn.execute(
@@ -146,13 +151,20 @@ class Database:
         )
         await self.conn.commit()
 
+    async def set_strip_links(self, user_id: int, channel: str, strip: bool):
+        await self.conn.execute(
+            "UPDATE subscriptions SET strip_links = ? WHERE user_id = ? AND channel = ?",
+            (1 if strip else 0, user_id, channel),
+        )
+        await self.conn.commit()
+
     async def get_active_subscribers(self, channel: str) -> list[dict]:
         async with self.conn.execute(
-            "SELECT s.user_id, s.mode, s.strip_emojis, GROUP_CONCAT(k.keyword) as keywords "
+            "SELECT s.user_id, s.mode, s.strip_emojis, s.strip_links, GROUP_CONCAT(k.keyword) as keywords "
             "FROM subscriptions s "
             "LEFT JOIN keywords k ON s.user_id = k.user_id AND s.channel = k.channel "
             "WHERE s.channel = ? AND s.active = 1 "
-            "GROUP BY s.user_id, s.mode, s.strip_emojis",
+            "GROUP BY s.user_id, s.mode, s.strip_emojis, s.strip_links",
             (channel,),
         ) as cursor:
             rows = await cursor.fetchall()
@@ -161,7 +173,8 @@ class Database:
                 "user_id": r[0],
                 "mode": r[1],
                 "strip_emojis": bool(r[2]),
-                "keywords": r[3].split(",") if r[3] else [],
+                "strip_links": bool(r[3]),
+                "keywords": r[4].split(",") if r[4] else [],
             }
             for r in rows
         ]
