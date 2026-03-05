@@ -113,3 +113,18 @@ async def test_get_active_subscribers(db):
     user_ids = [s["user_id"] for s in subs]
     assert 1 in user_ids
     assert 2 not in user_ids
+
+
+@pytest.mark.asyncio
+async def test_strip_emojis_default_false(db):
+    await db.add_subscription(user_id=1, channel="testchannel")
+    subs = await db.get_user_subscriptions(user_id=1)
+    assert subs[0]["strip_emojis"] == 0
+
+
+@pytest.mark.asyncio
+async def test_set_strip_emojis(db):
+    await db.add_subscription(user_id=1, channel="testchannel")
+    await db.set_strip_emojis(user_id=1, channel="testchannel", strip=True)
+    subs = await db.get_active_subscribers(channel="testchannel")
+    assert subs[0]["strip_emojis"] is True

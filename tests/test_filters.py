@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from filters import should_forward
+from filters import should_forward, remove_emojis
 
 
 def test_mode_all_forwards_everything():
@@ -46,3 +46,15 @@ def test_partial_word_match():
 def test_none_text_treated_as_empty():
     assert should_forward(text=None, mode="include", keywords=["crypto"]) is False
     assert should_forward(text=None, mode="all", keywords=[]) is True
+
+
+def test_remove_emojis_strips_emojis():
+    assert remove_emojis("Hello 👋 world 🌍") == "Hello  world"
+
+
+def test_remove_emojis_leaves_plain_text():
+    assert remove_emojis("No emojis here") == "No emojis here"
+
+
+def test_remove_emojis_empty_string():
+    assert remove_emojis("") == ""
