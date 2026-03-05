@@ -3,6 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import UsernameNotOccupied, UsernameInvalid, ChannelPrivate, PeerIdInvalid
 import config
+import state
 from db import Database
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,8 @@ def register(app: Client, get_db):
     async def handle_channel_input(client: Client, message: Message):
         if not _auth(message.from_user.id):
             return
+        if state.pending_keyword.get(message.from_user.id):
+            return
         username = message.text.lstrip("@").strip()
         try:
             chat = await client.get_chat(username)
@@ -101,27 +104,25 @@ def register(app: Client, get_db):
         await callback.message.edit_text(f"Removed @{channel}.")
         await callback.answer()
 
-    @app.on_message(filters.private & filters.reply & filters.text)
+    @app.on_message(filters.private & filters.text)
     async def handle_keyword_input(client: Client, message: Message):
-        if not _auth(message.from_user.id):
+        user_id = message.from_user.id
+        channel = state.pending_keyword.get(user_id)
+        if not channel:
             return
-        reply_text = message.reply_to_message.text or ""
-        if "keyword to add for @" not in reply_text:
-            return
-        # Extract channel from the prompt message
-        try:
-            channel = reply_text.split("@")[1].strip().rstrip(":")
-        except IndexError:
+        if not _auth(user_id):
             return
 
         keyword = message.text.strip().lower()
         if not keyword:
             return
 
+        del state.pending_keyword[user_id]
+
         async with get_db() as db:
-            await db.add_keyword(user_id=message.from_user.id, channel=channel, keyword=keyword)
-            keywords = await db.get_keywords(user_id=message.from_user.id, channel=channel)
-            subs = await db.get_user_subscriptions(user_id=message.from_user.id)
+            await db.add_keyword(user_id=user_id, channel=channel, keyword=keyword)
+            keywords = await db.get_keywords(user_id=user_id, channel=channel)
+            subs = await db.get_user_subscriptions(user_id=user_id)
             sub = next((s for s in subs if s["channel"] == channel), None)
 
         if sub:
@@ -129,5 +130,5 @@ def register(app: Client, get_db):
             await message.reply(
                 f"Added keyword '{keyword}' for @{channel}.\n"
                 f"Mode: {sub['mode']}\nKeywords: {', '.join(keywords)}",
-                reply_markup=settings_keyboard(channel, sub["mode"], keywords)
+                reply_markup=settings_keyboard(channel, sub["mode"], keywords, sub["strip_emojis"], sub["strip_links"])
             )

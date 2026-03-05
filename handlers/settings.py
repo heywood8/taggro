@@ -1,6 +1,8 @@
 from pyrogram import Client, filters
+from pyrogram.errors import MessageNotModified
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 import config
+import state
 from db import Database
 
 
@@ -76,10 +78,13 @@ def register(app: Client, get_db):
                 await callback.answer(str(e), show_alert=True)
                 return
 
-        await callback.message.edit_text(
-            f"Settings for @{channel}\nMode: {sub['mode']}\nKeywords: {', '.join(keywords) or 'none'}",
-            reply_markup=settings_keyboard(channel, sub["mode"], keywords, sub["strip_emojis"], sub["strip_links"])
-        )
+        try:
+            await callback.message.edit_text(
+                f"Settings for @{channel}\nMode: {sub['mode']}\nKeywords: {', '.join(keywords) or 'none'}",
+                reply_markup=settings_keyboard(channel, sub["mode"], keywords, sub["strip_emojis"], sub["strip_links"])
+            )
+        except MessageNotModified:
+            pass
         await callback.answer()
 
     @app.on_callback_query(filters.regex(r"^addkw:(.+)$"))
@@ -87,6 +92,7 @@ def register(app: Client, get_db):
         if not _auth(callback.from_user.id):
             return
         channel = callback.matches[0].group(1)
+        state.pending_keyword[callback.from_user.id] = channel
         await callback.message.reply(f"Send the keyword to add for @{channel}:")
         await callback.answer()
 
