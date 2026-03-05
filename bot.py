@@ -26,7 +26,7 @@ async def get_db():
 
 
 async def main():
-    app = Client("bot", bot_token=config.BOT_TOKEN)
+    app = Client("bot", api_id=config.API_ID, api_hash=config.API_HASH, bot_token=config.BOT_TOKEN)
 
     start_handler.register(app, get_db)
     channels_handler.register(app, get_db)
