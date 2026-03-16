@@ -18,12 +18,12 @@ val apiHash = localProps.getProperty("TELEGRAM_API_HASH", "")
 
 android {
     namespace = "com.heywood8.telegramnews"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.heywood8.telegramnews"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    implementation(libs.tdktx)
     implementation(libs.work.runtime.ktx)
     implementation(libs.coroutines.android)
 
