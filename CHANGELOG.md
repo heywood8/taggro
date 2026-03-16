@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/heywood8/taggro/compare/v0.3.1...v0.3.2) (2026-03-16)
+
+
+### Documentation
+
+* expand project instructions with build commands and architecture overview ([77998fa](https://github.com/heywood8/taggro/commit/77998fa8bce0d0634ab07338655ee6626289ae2f))
+
 ## [0.3.1](https://github.com/heywood8/taggro/compare/v0.3.0...v0.3.1) (2026-03-16)
 
 
