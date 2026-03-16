@@ -2,6 +2,7 @@ package com.heywood8.telegramnews.ui.channels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.heywood8.telegramnews.data.local.UserPreferencesRepository
 import com.heywood8.telegramnews.domain.model.Channel
 import com.heywood8.telegramnews.domain.model.Subscription
 import com.heywood8.telegramnews.domain.repository.LocalRepository
@@ -23,7 +24,11 @@ class ChannelViewModel @Inject constructor(
     private val localRepo: LocalRepository,
     private val telegramRepo: TelegramRepository,
     private val subscriptionUseCase: SubscriptionUseCase,
+    private val userPrefs: UserPreferencesRepository,
 ) : ViewModel() {
+
+    val showChannelIcons: StateFlow<Boolean> = userPrefs.showChannelIcons
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val subscriptions: StateFlow<List<Subscription>> = localRepo.observeSubscriptions(FeedViewModel.USER_ID)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

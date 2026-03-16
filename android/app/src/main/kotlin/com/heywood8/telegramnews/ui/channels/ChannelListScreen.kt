@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.heywood8.telegramnews.domain.model.Subscription
+import com.heywood8.telegramnews.ui.common.ChannelIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +49,7 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
     val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
     val searching by viewModel.searching.collectAsStateWithLifecycle()
     val selectedSub by viewModel.selectedSub.collectAsStateWithLifecycle()
+    val showChannelIcons by viewModel.showChannelIcons.collectAsStateWithLifecycle()
 
     var query by rememberSaveable { mutableStateOf("") }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -93,6 +97,10 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
+                                if (showChannelIcons) {
+                                    ChannelIcon(name = channel.title.ifBlank { channel.username })
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                }
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(channel.title, style = MaterialTheme.typography.bodyLarge)
                                     Text(
@@ -129,6 +137,7 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
                         items(subscriptions, key = { it.channel }) { sub ->
                             SubscriptionItem(
                                 sub = sub,
+                                showIcon = showChannelIcons,
                                 onClick = { viewModel.selectSubscription(sub) },
                                 onDelete = { viewModel.unsubscribe(sub.channel) },
                             )
@@ -157,6 +166,7 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
 @Composable
 private fun SubscriptionItem(
     sub: Subscription,
+    showIcon: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -169,6 +179,10 @@ private fun SubscriptionItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            if (showIcon) {
+                ChannelIcon(name = sub.channel)
+                Spacer(modifier = Modifier.width(12.dp))
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text("@${sub.channel}", style = MaterialTheme.typography.bodyLarge)
                 Text(

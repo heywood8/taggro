@@ -10,6 +10,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -21,11 +22,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val showChannelIcons by viewModel.showChannelIcons.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings") }) },
@@ -49,6 +52,24 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     TextButton(onClick = { showLogoutDialog = true }) {
                         Text("Sign out", color = MaterialTheme.colorScheme.error)
                     }
+                },
+            )
+            Divider()
+            Text(
+                "Display",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+            ListItem(
+                headlineContent = { Text("Show channel icons") },
+                supportingContent = { Text("Show a channel icon next to the channel name") },
+                modifier = Modifier.fillMaxWidth(),
+                trailingContent = {
+                    Switch(
+                        checked = showChannelIcons,
+                        onCheckedChange = { viewModel.setShowChannelIcons(it) },
+                    )
                 },
             )
             Divider()
