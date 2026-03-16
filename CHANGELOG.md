@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/heywood8/taggro/compare/v0.3.3...v0.4.0) (2026-03-16)
+
+
+### Features
+
+* truncate feed items to 6 lines, tap to open full article sheet ([#7](https://github.com/heywood8/taggro/issues/7)) ([edbdc27](https://github.com/heywood8/taggro/commit/edbdc27c6838058dec4a7f9f4c36a81cbdf09c65))
+
 ## [0.3.3](https://github.com/heywood8/taggro/compare/v0.3.2...v0.3.3) (2026-03-16)
 
 
