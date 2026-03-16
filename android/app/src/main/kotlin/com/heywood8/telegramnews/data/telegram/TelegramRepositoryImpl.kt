@@ -19,12 +19,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import kotlinx.telegram.core.TelegramFlow
-import kotlinx.telegram.coroutines.checkAuthenticationCode
-import kotlinx.telegram.coroutines.getChatHistory
-import kotlinx.telegram.coroutines.getSupergroup
-import kotlinx.telegram.coroutines.logOut
-import kotlinx.telegram.coroutines.searchPublicChat
 import kotlinx.telegram.coroutines.setTdlibParameters
 import kotlinx.telegram.flows.authorizationStateFlow
 import org.drinkless.tdlib.TdApi
@@ -38,32 +34,50 @@ class TelegramRepositoryImpl @Inject constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val api = TelegramFlow()
+    private val tdDbDir get() = File(context.filesDir, "td")
+    private val tdFilesDir get() = File(context.filesDir, "td_files")
 
-    init {
+    private fun clearTdlibDatabase() {
+        tdDbDir.deleteRecursively()
+        tdFilesDir.deleteRecursively()
+    }
+
+    private fun initTdlib() {
         api.attachClient()
         scope.launch {
             api.authorizationStateFlow().collect { state ->
-                if (state is TdApi.AuthorizationStateWaitTdlibParameters) {
-                    api.setTdlibParameters(
-                        useTestDc = false,
-                        databaseDirectory = context.filesDir.absolutePath + "/td",
-                        filesDirectory = context.filesDir.absolutePath + "/td_files",
-                        databaseEncryptionKey = byteArrayOf(),
-                        useFileDatabase = true,
-                        useChatInfoDatabase = true,
-                        useMessageDatabase = true,
-                        useSecretChats = false,
-                        apiId = BuildConfig.TELEGRAM_API_ID,
-                        apiHash = BuildConfig.TELEGRAM_API_HASH,
-                        systemLanguageCode = "en",
-                        deviceModel = Build.MODEL,
-                        systemVersion = Build.VERSION.RELEASE,
-                        applicationVersion = "1.0"
-                    )
+                when (state) {
+                    is TdApi.AuthorizationStateWaitTdlibParameters -> {
+                        try {
+                            api.setTdlibParameters(
+                                useTestDc = false,
+                                databaseDirectory = tdDbDir.absolutePath,
+                                filesDirectory = tdFilesDir.absolutePath,
+                                databaseEncryptionKey = byteArrayOf(),
+                                useFileDatabase = true,
+                                useChatInfoDatabase = true,
+                                useMessageDatabase = true,
+                                useSecretChats = false,
+                                apiId = BuildConfig.TELEGRAM_API_ID,
+                                apiHash = BuildConfig.TELEGRAM_API_HASH,
+                                systemLanguageCode = "en",
+                                deviceModel = Build.MODEL,
+                                systemVersion = Build.VERSION.RELEASE,
+                                applicationVersion = "1.0"
+                            )
+                        } catch (e: Exception) {
+                            clearTdlibDatabase()
+                            api.attachClient()
+                        }
+                    }
+                    is TdApi.AuthorizationStateClosed -> api.attachClient()
+                    else -> {}
                 }
             }
         }
     }
+
+    init { initTdlib() }
 
     override val authState: Flow<AuthState> = api.authorizationStateFlow()
         .map { state ->
@@ -86,7 +100,7 @@ class TelegramRepositoryImpl @Inject constructor(
     }
 
     override suspend fun sendCode(code: String) {
-        api.checkAuthenticationCode(code)
+        api.sendFunctionAsync(TdApi.CheckAuthenticationCode(code))
     }
 
     override suspend fun sendPassword(password: String) {
@@ -94,7 +108,8 @@ class TelegramRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logOut() {
-        api.logOut()
+        try { api.sendFunctionAsync(TdApi.LogOut()) } catch (_: Exception) {}
+        clearTdlibDatabase()
     }
 
     override fun observeNewMessages(channels: List<String>): Flow<Message> = channelFlow {
@@ -103,7 +118,7 @@ class TelegramRepositoryImpl @Inject constructor(
 
         for (username in channels) {
             try {
-                val chat = api.searchPublicChat(username)
+                val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(username))
                 chatIdToUsername[chat.id] = username
                 chatIdToTitle[chat.id] = chat.title
             } catch (e: Exception) {
@@ -137,8 +152,8 @@ class TelegramRepositoryImpl @Inject constructor(
         afterMessageId: Long
     ): List<Message> {
         return try {
-            val chat = api.searchPublicChat(channel)
-            val result = api.getChatHistory(chat.id, afterMessageId, 0, 50, false)
+            val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(channel))
+            val result = api.sendFunctionAsync(TdApi.GetChatHistory(chat.id, afterMessageId, 0, 50, false))
             result.messages?.mapNotNull { msg ->
                 val text = extractText(msg.content).ifBlank { return@mapNotNull null }
                 Message(
@@ -157,10 +172,10 @@ class TelegramRepositoryImpl @Inject constructor(
     override suspend fun searchChannel(query: String): List<Channel> {
         return try {
             val username = query.removePrefix("@").trim()
-            val chat = api.searchPublicChat(username)
+            val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(username))
             val supergroupId = (chat.type as? TdApi.ChatTypeSupergroup)?.supergroupId
             val memberCount = if (supergroupId != null) {
-                try { api.getSupergroup(supergroupId).memberCount } catch (e: Exception) { 0 }
+                try { api.sendFunctionAsync(TdApi.GetSupergroup(supergroupId)).memberCount } catch (e: Exception) { 0 }
             } else 0
             listOf(Channel(username = username, title = chat.title, memberCount = memberCount))
         } catch (e: Exception) {

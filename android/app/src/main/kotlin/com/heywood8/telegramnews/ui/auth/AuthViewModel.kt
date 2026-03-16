@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.heywood8.telegramnews.domain.model.AuthState
 import com.heywood8.telegramnews.domain.repository.TelegramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +29,11 @@ class AuthViewModel @Inject constructor(
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
     fun sendPhoneNumber(phone: String) {
-        viewModelScope.launch {
+        val handler = CoroutineExceptionHandler { _, e ->
+            _error.value = e.message ?: "Failed to send phone number"
+            _loading.value = false
+        }
+        viewModelScope.launch(handler) {
             _loading.value = true
             _error.value = null
             try {
@@ -42,7 +47,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun sendCode(code: String) {
-        viewModelScope.launch {
+        val handler = CoroutineExceptionHandler { _, e ->
+            _error.value = e.message ?: "Invalid code"
+            _loading.value = false
+        }
+        viewModelScope.launch(handler) {
             _loading.value = true
             _error.value = null
             try {
@@ -56,7 +65,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun sendPassword(password: String) {
-        viewModelScope.launch {
+        val handler = CoroutineExceptionHandler { _, e ->
+            _error.value = e.message ?: "Invalid password"
+            _loading.value = false
+        }
+        viewModelScope.launch(handler) {
             _loading.value = true
             _error.value = null
             try {
@@ -66,6 +79,12 @@ class AuthViewModel @Inject constructor(
             } finally {
                 _loading.value = false
             }
+        }
+    }
+
+    fun resetAuth() {
+        viewModelScope.launch {
+            try { repo.logOut() } catch (_: Exception) {}
         }
     }
 

@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -61,8 +65,21 @@ fun AuthScreen(
         }
     }
 
+    val showBack = authState == AuthState.WaitingForCode || authState == AuthState.WaitingForPassword
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Sign In") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Sign In") },
+                navigationIcon = {
+                    if (showBack) {
+                        IconButton(onClick = viewModel::resetAuth) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(
@@ -76,7 +93,7 @@ fun AuthScreen(
                 CircularProgressIndicator()
             } else {
                 when (authState) {
-                    AuthState.WaitingForPhone, AuthState.Unknown -> PhoneStep(
+                    AuthState.WaitingForPhone, AuthState.Unknown, AuthState.LoggedOut -> PhoneStep(
                         onSubmit = viewModel::sendPhoneNumber
                     )
                     AuthState.WaitingForCode -> CodeStep(

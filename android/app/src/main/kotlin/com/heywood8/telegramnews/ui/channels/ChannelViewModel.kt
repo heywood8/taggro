@@ -9,6 +9,7 @@ import com.heywood8.telegramnews.domain.repository.TelegramRepository
 import com.heywood8.telegramnews.domain.usecase.SubscriptionUseCase
 import com.heywood8.telegramnews.ui.feed.FeedViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +46,11 @@ class ChannelViewModel @Inject constructor(
             _searchResults.value = emptyList()
             return
         }
-        viewModelScope.launch {
+        val handler = CoroutineExceptionHandler { _, e ->
+            _error.value = e.message
+            _searching.value = false
+        }
+        viewModelScope.launch(handler) {
             _searching.value = true
             _error.value = null
             try {
