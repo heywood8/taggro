@@ -1,9 +1,4 @@
-__pycache__/
-*.pyc
 .env
-/data/
-*.session
-*.session-journal
 .worktrees/
 android/local.properties
 android/app/*.jks
