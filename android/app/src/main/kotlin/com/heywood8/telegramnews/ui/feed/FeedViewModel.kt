@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.heywood8.telegramnews.data.local.dao.MessageDao
 import com.heywood8.telegramnews.data.local.entity.MessageEntity
+import com.heywood8.telegramnews.data.local.UserPreferencesRepository
 import com.heywood8.telegramnews.domain.model.Message
 import com.heywood8.telegramnews.domain.model.Subscription
 import com.heywood8.telegramnews.domain.repository.LocalRepository
@@ -31,11 +32,15 @@ class FeedViewModel @Inject constructor(
     private val telegramRepo: TelegramRepository,
     private val filterUseCase: FilterUseCase,
     private val messageDao: MessageDao,
+    private val userPrefs: UserPreferencesRepository,
 ) : ViewModel() {
 
     companion object {
         const val USER_ID = 0L
     }
+
+    val showChannelIcons: StateFlow<Boolean> = userPrefs.showChannelIcons
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val subscriptions: StateFlow<List<Subscription>> = localRepo.observeSubscriptions(USER_ID)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

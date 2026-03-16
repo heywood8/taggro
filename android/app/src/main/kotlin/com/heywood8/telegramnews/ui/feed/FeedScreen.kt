@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.heywood8.telegramnews.domain.model.Message
+import com.heywood8.telegramnews.ui.common.ChannelIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,6 +50,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val messages by viewModel.filteredMessages.collectAsStateWithLifecycle()
     val subscriptions by viewModel.subscriptions.collectAsStateWithLifecycle()
     val selectedChannel by viewModel.selectedChannel.collectAsStateWithLifecycle()
+    val showChannelIcons by viewModel.showChannelIcons.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -102,7 +106,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(messages, key = { it.id }) { message ->
-                        FeedItem(message, onClick = { selectedMessage = message })
+                        FeedItem(message, showChannelIcons, onClick = { selectedMessage = message })
                     }
                 }
             }
@@ -118,7 +122,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun FeedItem(message: Message, onClick: () -> Unit) {
+private fun FeedItem(message: Message, showChannelIcons: Boolean, onClick: () -> Unit) {
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -130,11 +134,22 @@ private fun FeedItem(message: Message, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = message.channelTitle,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    if (showChannelIcons) {
+                        ChannelIcon(name = message.channelTitle.ifBlank { message.channel })
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = message.channelTitle,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Text(
                     text = formatTimestamp(message.timestamp),
                     style = MaterialTheme.typography.labelSmall,
