@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.heywood8.telegramnews.ui.navigation.AppNavHost
 import com.heywood8.telegramnews.ui.theme.TelegramNewsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -14,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TelegramNewsTheme {
-                // Navigation scaffold added later
+                AppNavHost()
             }
         }
     }
