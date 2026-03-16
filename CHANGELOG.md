@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/heywood8/taggro/compare/v0.3.2...v0.3.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* strip supplementary-plane emoji and channel signature from messages ([b30fccd](https://github.com/heywood8/taggro/commit/b30fccd21df04a0e0874186349aad3347c3ac74b))
+
 ## [0.3.2](https://github.com/heywood8/taggro/compare/v0.3.1...v0.3.2) (2026-03-16)
 
 
