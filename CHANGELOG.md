@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/heywood8/taggro/compare/v0.2.0...v0.3.0) (2026-03-16)
+
+
+### Features
+
+* persist feed to Room, fetch on load, strip emojis, fix TDLib init ([709ff2a](https://github.com/heywood8/taggro/commit/709ff2a48ade0c0e384e6b302fdd435d44874bec))
+
 ## [0.2.0](https://github.com/heywood8/taggro/compare/v0.1.0...v0.2.0) (2026-03-16)
 
 
