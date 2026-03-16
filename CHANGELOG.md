@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/heywood8/taggro/compare/v0.3.0...v0.3.1) (2026-03-16)
+
+
+### Miscellaneous Chores
+
+* remove Python bot code, keep Android app only ([13600c8](https://github.com/heywood8/taggro/commit/13600c8293232d48b56d6c885e823844341645e1))
+
 ## [0.3.0](https://github.com/heywood8/taggro/compare/v0.2.0...v0.3.0) (2026-03-16)
 
 
