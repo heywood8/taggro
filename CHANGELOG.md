@@ -1,0 +1,52 @@
+# Changelog
+
+## [0.2.0](https://github.com/heywood8/taggro/compare/v0.1.0...v0.2.0) (2026-03-16)
+
+
+### Features
+
+* Android project scaffold with Compose + Material3 + Hilt ([f037761](https://github.com/heywood8/taggro/commit/f0377618e5863336d8a16fddbed3f26718ccfc2e))
+* app navigation scaffold with NavigationSuiteScaffold and auth gate ([90afe64](https://github.com/heywood8/taggro/commit/90afe643ba7a3038aec0d8a4f876e723fd565482))
+* AuthScreen + AuthViewModel with 3-step phone/code/2FA flow ([a253acd](https://github.com/heywood8/taggro/commit/a253acd2dd1820414b84a356f21276537b8e5c16))
+* complete app — Feed UI, Channel management, Settings, WorkManager sync, all tests passing ([bc60671](https://github.com/heywood8/taggro/commit/bc606712b7d0ab6eeab11bf5fd4e69253b9d53f9))
+* domain models and repository interfaces ([fc72a5f](https://github.com/heywood8/taggro/commit/fc72a5f25e61bca1e2f5391a974225e9fe176471))
+* FeedUseCase combining TDLib stream with per-subscription filtering ([0eddfa3](https://github.com/heywood8/taggro/commit/0eddfa3f419bb99e7088a6bd670e62fdfc51f0aa))
+* FilterUseCase with full test coverage (ports filters.py) ([c5aa631](https://github.com/heywood8/taggro/commit/c5aa6319beb12afdeae53f326da61d5e3ed807bc))
+* Hilt DI modules and LocalRepositoryImpl ([cb6d9ae](https://github.com/heywood8/taggro/commit/cb6d9ae2532416c4fe73dc38debce554bdd5b89e))
+* implement TelegramRepositoryImpl with td-ktx auth + channel search + message streaming ([f5cf950](https://github.com/heywood8/taggro/commit/f5cf95036034adb0abe482110ad2f334ffca416f))
+* Room database layer with entities, DAOs, and tests ([923ec88](https://github.com/heywood8/taggro/commit/923ec8800946e2d34b8e6a1f6ef7b09d4ccdcb8c))
+* SubscriptionUseCase with mode/keyword management and tests ([32b7ddc](https://github.com/heywood8/taggro/commit/32b7ddceddefc3fda2532a40c898f5f168ac9afc))
+
+
+### Bug Fixes
+
+* correct build.gradle.kts quote escaping and theme parent for Compose ([624adb5](https://github.com/heywood8/taggro/commit/624adb5e58c3dc7e6bb6469dd87f598a72a616f4))
+* handle TDLib async exceptions and add back navigation in auth ([59ea40a](https://github.com/heywood8/taggro/commit/59ea40a2c967056764d6927afe78cc6d7f0d7b64))
+* improve DatabaseTest coverage and wire turbine to androidTest ([b2439f2](https://github.com/heywood8/taggro/commit/b2439f243344e92b38567f0a0a8cda8a1068267d))
+* install gcc for tgcrypto compilation on arm64 ([f5d7ee9](https://github.com/heywood8/taggro/commit/f5d7ee9e8490a38d29b3b977756648d882cc19e1))
+* produce latest tag on version tag pushes, remove extra branch tag rule ([ecd9d7b](https://github.com/heywood8/taggro/commit/ecd9d7b32a5ff7fb1f2d58d579fb4e9cfb15c747))
+* show full message text in feed without truncation ([9265909](https://github.com/heywood8/taggro/commit/9265909a9bf5ff5fc8abcdbf7b8992601eb68de9))
+* update compileSdk to 36, Gradle to 8.11.1, add tdktx dependency ([e898d4a](https://github.com/heywood8/taggro/commit/e898d4a059b297dfbcae6e0e8108886e9a67c2ca))
+* upgrade Kotlin 2.2.21, KSP 2.2.21-2.0.5, Hilt 2.56, Room 2.8.4 for KSP2 compatibility ([ecfbdb2](https://github.com/heywood8/taggro/commit/ecfbdb2628dc74e80e4d7cce0107ecf7dca80bc3))
+* use build-essential for tgcrypto compilation (needs libc6-dev) ([1fddd5a](https://github.com/heywood8/taggro/commit/1fddd5ad443e9e11924c5134041f099883c1a305))
+
+
+### Documentation
+
+* add Android redesign design document ([a64e66e](https://github.com/heywood8/taggro/commit/a64e66ebf089e8b228d518aeba7e57da23623b3e))
+* add Android redesign implementation plan ([129c835](https://github.com/heywood8/taggro/commit/129c83581c1237afa3428def6ebd8121bbc8a6cb))
+* add multi-arch Docker CI design doc ([90318f1](https://github.com/heywood8/taggro/commit/90318f12b4fe002e493e9c28fdac9220b7476c08))
+* add multi-arch Docker CI implementation plan ([edb1050](https://github.com/heywood8/taggro/commit/edb1050ca8280679015a6993d5f48c4db934e28f))
+
+
+### Miscellaneous Chores
+
+* add release-please config ([4818139](https://github.com/heywood8/taggro/commit/48181394d8c93eb7d67b4e8bc4ad0b0f0da88eaa))
+* temporarily remove tdktx dependency until TDLib setup in Task 7 ([ac58911](https://github.com/heywood8/taggro/commit/ac58911acfdf3368cd66b7bfd054b95b7b251bd2))
+
+
+### Continuous Integration
+
+* add CI, release APK build, and release-please workflows ([39eedb1](https://github.com/heywood8/taggro/commit/39eedb127fd7968d19d0d1921e170cc493026055))
+* add multi-arch Docker build workflow for ghcr.io ([b6eacbe](https://github.com/heywood8/taggro/commit/b6eacbe42f07dcdd6e4da740ef541ab0d816977a))
+* pin action SHAs and clarify latest tag condition ([93cd4b1](https://github.com/heywood8/taggro/commit/93cd4b11c6ccdf7a3b7f342131395c87ce1bd803))
