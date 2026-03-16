@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/heywood8/taggro/compare/v0.4.1...v0.5.0) (2026-03-16)
+
+
+### Features
+
+* toggle channel icons ([5662f37](https://github.com/heywood8/taggro/commit/5662f37728c43a54ded27f211a876c76e681a6f7))
+
+
+### Miscellaneous Chores
+
+* trigger release ([#12](https://github.com/heywood8/taggro/issues/12)) ([feee541](https://github.com/heywood8/taggro/commit/feee541ba20ea1598e142e1d1ac6ba19e8c154e7))
+
 ## [0.4.1](https://github.com/heywood8/taggro/compare/v0.4.0...v0.4.1) (2026-03-16)
 
 
