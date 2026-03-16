@@ -130,7 +130,7 @@ class TelegramRepositoryImpl @Inject constructor(
                 val msg = update.message
                 val username = chatIdToUsername[msg.chatId] ?: return@collect
                 val title = chatIdToTitle[msg.chatId] ?: username
-                val text = extractText(msg.content)
+                val text = extractText(msg.content, title)
                 if (text.isNotBlank()) {
                     send(
                         Message(
@@ -153,7 +153,7 @@ class TelegramRepositoryImpl @Inject constructor(
             val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(channel))
             val result = api.sendFunctionAsync(TdApi.GetChatHistory(chat.id, afterMessageId, 0, 50, false))
             result.messages?.mapNotNull { msg ->
-                val text = extractText(msg.content).ifBlank { return@mapNotNull null }
+                val text = extractText(msg.content, chat.title).ifBlank { return@mapNotNull null }
                 Message(
                     id = msg.id,
                     channel = channel,
@@ -181,7 +181,7 @@ class TelegramRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun extractText(content: TdApi.MessageContent): String {
+    private fun extractText(content: TdApi.MessageContent, channelTitle: String = ""): String {
         val raw = when (content) {
             is TdApi.MessageText -> content.text.text
             is TdApi.MessagePhoto -> content.caption?.text.orEmpty()
@@ -190,31 +190,38 @@ class TelegramRepositoryImpl @Inject constructor(
             is TdApi.MessageAnimation -> content.caption?.text.orEmpty()
             else -> ""
         }
-        return cleanText(raw)
+        return cleanText(raw, channelTitle)
     }
 
-    private fun cleanText(text: String): String {
-        // Drop trailing lines that are blank or consist only of emojis/symbols (channel signatures)
+    private fun cleanText(text: String, channelTitle: String = ""): String {
         val lines = text.lines().toMutableList()
-        while (lines.isNotEmpty() && lines.last().stripEmojis().isBlank()) {
-            lines.removeLast()
+        val normalizedTitle = channelTitle.stripEmojis().trim().lowercase()
+        // Drop trailing lines that are blank or are the channel signature (with or without emoji)
+        while (lines.isNotEmpty()) {
+            val stripped = lines.last().stripEmojis().trim()
+            val isBlank = stripped.isBlank()
+            val isSignature = normalizedTitle.isNotEmpty() && stripped.lowercase() == normalizedTitle
+            if (isBlank || isSignature) lines.removeLast() else break
         }
         return lines.joinToString("\n").stripEmojis().trim()
     }
 
-    private fun String.stripEmojis(): String =
-        replace(EMOJI_REGEX, "").replace(Regex(" {2,}"), " ")
-
-    companion object {
-        // Covers most Unicode emoji blocks and variation selectors
-        private val EMOJI_REGEX = Regex(
-            "[\uD83C-\uDBFF][\uDC00-\uDFFF]" +   // surrogate pairs (most emoji)
-            "|[\u2600-\u27FF]\uFE0F?" +             // misc symbols & dingbats
-            "|[\u2300-\u23FF]\uFE0F?" +             // misc technical
-            "|[\u2B00-\u2BFF]\uFE0F?" +             // misc symbols arrows
-            "|[\u3000-\u303F]" +                    // CJK symbols
-            "|[\uFE00-\uFE0F]" +                    // variation selectors
-            "|\u200D"                               // zero-width joiner
-        )
+    // Iterates code points so supplementary-plane emoji (U+1F000+) are handled correctly.
+    private fun String.stripEmojis(): String {
+        val sb = StringBuilder()
+        var i = 0
+        while (i < length) {
+            val cp = codePointAt(i)
+            val keep = cp <= 0xFFFF &&
+                cp !in 0x2300..0x23FF &&   // misc technical
+                cp !in 0x2600..0x27FF &&   // misc symbols & dingbats
+                cp !in 0x2B00..0x2BFF &&   // misc symbols arrows
+                cp !in 0x3000..0x303F &&   // CJK symbols
+                cp !in 0xFE00..0xFE0F &&   // variation selectors
+                cp != 0x200D               // ZWJ
+            if (keep) sb.appendCodePoint(cp)
+            i += Character.charCount(cp)
+        }
+        return sb.toString().replace(Regex(" {2,}"), " ")
     }
 }
