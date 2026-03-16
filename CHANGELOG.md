@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/heywood8/taggro/compare/v0.4.0...v0.4.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* restrict APK to arm64-v8a only ([#9](https://github.com/heywood8/taggro/issues/9)) ([cc0f68b](https://github.com/heywood8/taggro/commit/cc0f68bcc8334568372fbc98f84847d9d4ece019))
+
 ## [0.4.0](https://github.com/heywood8/taggro/compare/v0.3.3...v0.4.0) (2026-03-16)
 
 
