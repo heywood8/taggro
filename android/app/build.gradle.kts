@@ -13,6 +13,9 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
+val apiId = localProps.getProperty("TELEGRAM_API_ID", "0")
+val apiHash = localProps.getProperty("TELEGRAM_API_HASH", "")
+
 android {
     namespace = "com.heywood8.telegramnews"
     compileSdk = 35
@@ -24,8 +27,8 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("int", "TELEGRAM_API_ID", localProps.getProperty("TELEGRAM_API_ID", "0"))
-        buildConfigField("String", "TELEGRAM_API_HASH", "\"${localProps.getProperty("TELEGRAM_API_HASH", "")}\"")
+        buildConfigField("int", "TELEGRAM_API_ID", apiId)
+        buildConfigField("String", "TELEGRAM_API_HASH", "\"$apiHash\"")
     }
 
     buildTypes {
@@ -58,6 +61,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.navigation.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
