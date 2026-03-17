@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/heywood8/taggro/compare/v0.5.1...v0.6.0) (2026-03-17)
+
+
+### Features
+
+* add pull-to-refresh on feed screen ([88fdc29](https://github.com/heywood8/taggro/commit/88fdc297639e8f6c6706e85e6006872456fc5e56))
+
 ## [0.5.1](https://github.com/heywood8/taggro/compare/v0.5.0...v0.5.1) (2026-03-17)
 
 
