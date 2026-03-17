@@ -49,6 +49,7 @@ class SubscriptionUseCaseTest {
 
         override suspend fun getLastSeen(channel: String): Long = 0L
         override suspend fun updateLastSeen(channel: String, messageId: Long) = Unit
+        override suspend fun setIncludePhotos(userId: Long, channel: String, value: Boolean) = Unit
     }
 
     private val useCase = SubscriptionUseCase(fakeRepo, FilterUseCase())

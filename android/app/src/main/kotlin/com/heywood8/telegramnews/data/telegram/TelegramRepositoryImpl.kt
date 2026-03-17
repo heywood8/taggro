@@ -131,14 +131,16 @@ class TelegramRepositoryImpl @Inject constructor(
                 val username = chatIdToUsername[msg.chatId] ?: return@collect
                 val title = chatIdToTitle[msg.chatId] ?: username
                 val text = extractText(msg.content, title)
-                if (text.isNotBlank()) {
+                val mediaType = extractMediaType(msg.content)
+                if (text.isNotBlank() || mediaType == "photo") {
                     send(
                         Message(
                             id = msg.id,
                             channel = username,
                             channelTitle = title,
                             text = text,
-                            timestamp = msg.date.toLong()
+                            timestamp = msg.date.toLong(),
+                            mediaType = mediaType,
                         )
                     )
                 }
@@ -153,13 +155,16 @@ class TelegramRepositoryImpl @Inject constructor(
             val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(channel))
             val result = api.sendFunctionAsync(TdApi.GetChatHistory(chat.id, afterMessageId, 0, 50, false))
             result.messages?.mapNotNull { msg ->
-                val text = extractText(msg.content, chat.title).ifBlank { return@mapNotNull null }
+                val rawText = extractText(msg.content, chat.title)
+                val mediaType = extractMediaType(msg.content)
+                if (rawText.isBlank() && mediaType != "photo") return@mapNotNull null
                 Message(
                     id = msg.id,
                     channel = channel,
                     channelTitle = chat.title,
-                    text = text,
-                    timestamp = msg.date.toLong()
+                    text = rawText,
+                    timestamp = msg.date.toLong(),
+                    mediaType = mediaType,
                 )
             } ?: emptyList()
         } catch (e: Exception) {
@@ -179,6 +184,14 @@ class TelegramRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    private fun extractMediaType(content: TdApi.MessageContent): String? = when (content) {
+        is TdApi.MessagePhoto -> "photo"
+        is TdApi.MessageVideo -> "video"
+        is TdApi.MessageDocument -> "document"
+        is TdApi.MessageAnimation -> "animation"
+        else -> null
     }
 
     private fun extractText(content: TdApi.MessageContent, channelTitle: String = ""): String {
