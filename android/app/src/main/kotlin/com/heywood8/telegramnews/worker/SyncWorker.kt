@@ -34,6 +34,7 @@ class SyncWorker @AssistedInject constructor(
                             channelTitle = msg.channelTitle,
                             text = msg.text,
                             timestamp = msg.timestamp,
+                            mediaType = msg.mediaType,
                         )
                     }
                     messageDao.insertAll(entities)
