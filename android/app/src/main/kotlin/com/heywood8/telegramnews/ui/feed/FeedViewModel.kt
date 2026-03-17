@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.heywood8.telegramnews.data.local.UserPreferencesRepository
 import com.heywood8.telegramnews.data.local.dao.MessageDao
+import com.heywood8.telegramnews.data.local.dao.ReadMessageDao
 import com.heywood8.telegramnews.data.local.entity.MessageEntity
+import com.heywood8.telegramnews.data.local.entity.ReadMessageEntity
 import com.heywood8.telegramnews.domain.model.Message
 import com.heywood8.telegramnews.domain.model.Subscription
 import com.heywood8.telegramnews.domain.repository.LocalRepository
@@ -12,6 +14,7 @@ import com.heywood8.telegramnews.domain.repository.TelegramRepository
 import com.heywood8.telegramnews.domain.usecase.FilterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,6 +36,7 @@ class FeedViewModel @Inject constructor(
     private val telegramRepo: TelegramRepository,
     private val filterUseCase: FilterUseCase,
     private val messageDao: MessageDao,
+    private val readMessageDao: ReadMessageDao,
     private val userPrefs: UserPreferencesRepository,
 ) : ViewModel() {
 
@@ -52,12 +57,78 @@ class FeedViewModel @Inject constructor(
 
     val filteredMessages: StateFlow<List<Message>> = combine(
         messageDao.observeAll().map { entities ->
-            entities.map { e -> Message(e.id, e.channel, e.channelTitle.ifBlank { e.channel }, e.text, e.timestamp) }
+            entities.map { e ->
+                Message(e.id, e.channel, e.channelTitle.ifBlank { e.channel }, e.text, e.timestamp)
+            }
         },
-        _selectedChannel
-    ) { msgs, channel ->
-        if (channel == null) msgs else msgs.filter { it.channel == channel }
+        readMessageDao.observeReadIds().map { it.toHashSet() },
+        _selectedChannel,
+    ) { msgs, readSet, channel ->
+        val withRead = msgs.map { it.copy(isRead = it.id in readSet) }
+        if (channel == null) withRead else withRead.filter { it.channel == channel }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // Per-channel unread counts; "All" chip uses totalUnreadCount
+    val unreadCounts: StateFlow<Map<String, Int>> = subscriptions
+        .flatMapLatest { subs ->
+            val channels = subs.filter { it.active }.map { it.channel }
+            if (channels.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                val channelFlows: List<Flow<Pair<String, Int>>> = channels.map { ch ->
+                    readMessageDao.observeUnreadCount(ch).map { count -> ch to count }
+                }
+                combine(channelFlows) { pairs: Array<Pair<String, Int>> -> pairs.toMap() }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    val totalUnreadCount: StateFlow<Int> = readMessageDao.observeTotalUnreadCount()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    fun selectChannel(channel: String?) {
+        _selectedChannel.value = channel
+    }
+
+    fun markRead(id: Long) {
+        viewModelScope.launch {
+            readMessageDao.markRead(ReadMessageEntity(id))
+        }
+    }
+
+    fun markChannelRead(channel: String) {
+        viewModelScope.launch {
+            readMessageDao.markChannelRead(channel)
+        }
+    }
+
+    fun markAllRead() {
+        viewModelScope.launch {
+            readMessageDao.markAllRead()
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            val subs = localRepo.observeSubscriptions(USER_ID).first()
+            for (sub in subs.filter { it.active }) {
+                try {
+                    val messages = telegramRepo.fetchMessagesSince(sub.channel, 0)
+                    val filtered = messages.filter {
+                        filterUseCase.shouldForward(it.text, sub.mode, sub.keywords)
+                    }
+                    if (filtered.isNotEmpty()) {
+                        messageDao.insertAll(filtered.map { msg ->
+                            MessageEntity(msg.id, msg.channel, msg.channelTitle, msg.text, msg.timestamp)
+                        })
+                        messageDao.pruneChannel(sub.channel)
+                    }
+                } catch (_: Exception) {}
+            }
+            _isRefreshing.value = false
+        }
+    }
 
     init {
         // Real-time: persist new messages as they arrive
@@ -95,32 +166,6 @@ class FeedViewModel @Inject constructor(
                     }
                 } catch (_: Exception) {}
             }
-        }
-    }
-
-    fun selectChannel(channel: String?) {
-        _selectedChannel.value = channel
-    }
-
-    fun refresh() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            val subs = localRepo.observeSubscriptions(USER_ID).first()
-            for (sub in subs.filter { it.active }) {
-                try {
-                    val messages = telegramRepo.fetchMessagesSince(sub.channel, 0)
-                    val filtered = messages.filter {
-                        filterUseCase.shouldForward(it.text, sub.mode, sub.keywords)
-                    }
-                    if (filtered.isNotEmpty()) {
-                        messageDao.insertAll(filtered.map { msg ->
-                            MessageEntity(msg.id, msg.channel, msg.channelTitle, msg.text, msg.timestamp)
-                        })
-                        messageDao.pruneChannel(sub.channel)
-                    }
-                } catch (_: Exception) {}
-            }
-            _isRefreshing.value = false
         }
     }
 }

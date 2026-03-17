@@ -7,5 +7,6 @@ data class Message(
     val text: String,
     val timestamp: Long,
     val mediaType: String? = null,
-    val mediaUrl: String? = null
+    val mediaUrl: String? = null,
+    val isRead: Boolean = false,
 )
