@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/heywood8/taggro/compare/v0.9.0...v0.10.0) (2026-03-17)
+
+
+### Features
+
+* per channel photo filter (include/exclude photo-only messages) ([#28](https://github.com/heywood8/taggro/issues/28)) ([e968f81](https://github.com/heywood8/taggro/commit/e968f8183924203e508fc67853631417ea6103e4))
+
 ## [0.9.0](https://github.com/heywood8/taggro/compare/v0.8.0...v0.9.0) (2026-03-17)
 
 
