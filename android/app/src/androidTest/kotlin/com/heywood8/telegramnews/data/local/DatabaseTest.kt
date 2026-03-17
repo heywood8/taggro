@@ -106,4 +106,43 @@ class DatabaseTest {
         val stored = db.messageDao().observeByChannel("ch").first()
         assertEquals(5, stored.size)
     }
+
+    @Test
+    fun markSingleMessageRead() = runTest {
+        db.messageDao().insertAll(listOf(
+            MessageEntity(id = 10L, channel = "ch", channelTitle = "", text = "hello", timestamp = 1000L)
+        ))
+        db.readMessageDao().markRead(ReadMessageEntity(10L))
+        val readIds = db.readMessageDao().observeReadIds().first()
+        assertTrue(readIds.contains(10L))
+    }
+
+    @Test
+    fun markChannelReadCoversAllChannelMessages() = runTest {
+        db.messageDao().insertAll(listOf(
+            MessageEntity(id = 1L, channel = "news", channelTitle = "", text = "a", timestamp = 1000L),
+            MessageEntity(id = 2L, channel = "news", channelTitle = "", text = "b", timestamp = 2000L),
+            MessageEntity(id = 3L, channel = "other", channelTitle = "", text = "c", timestamp = 3000L),
+        ))
+        db.readMessageDao().markChannelRead("news")
+        val readIds = db.readMessageDao().observeReadIds().first().toSet()
+        assertTrue(readIds.contains(1L))
+        assertTrue(readIds.contains(2L))
+        assertFalse(readIds.contains(3L))
+    }
+
+    @Test
+    fun reinsertingMessagePreservesReadState() = runTest {
+        val msg = MessageEntity(id = 5L, channel = "ch", channelTitle = "", text = "original", timestamp = 1000L)
+        db.messageDao().insertAll(listOf(msg))
+        db.readMessageDao().markRead(ReadMessageEntity(5L))
+
+        // Re-insert with REPLACE (simulates a refresh overwriting the message)
+        db.messageDao().insertAll(listOf(
+            msg.copy(text = "updated")
+        ))
+
+        val readIds = db.readMessageDao().observeReadIds().first()
+        assertTrue("Read state must survive message re-insert", readIds.contains(5L))
+    }
 }
