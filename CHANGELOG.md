@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.0](https://github.com/heywood8/taggro/compare/v0.6.0...v0.7.0) (2026-03-17)
+
+
+### Features
+
+* add isRead to Message model and wire read-state flows in FeedViewModel ([a10a2f8](https://github.com/heywood8/taggro/commit/a10a2f836d1b8cb0dd6abb551ca12d0bb824adfe))
+* add read_messages table, DAO, and DB migration v3 ([b56ce31](https://github.com/heywood8/taggro/commit/b56ce31f67f5a2a2dd5531a60bedd5080d6a179c))
+* add read/unread UI — dwell detection, card dimming, chip badges, long-press mark read ([83c4926](https://github.com/heywood8/taggro/commit/83c4926d2d07e1074d79f3fc6a6653f8932af86c))
+
+
+### Bug Fixes
+
+* thread-safe timestamp formatting, correct LaunchedEffect key, fix test MessageEntity constructors ([a240a63](https://github.com/heywood8/taggro/commit/a240a6373a9d5eb8ce626ec4e2f545bfcb3ce0b3))
+
+
+### Documentation
+
+* add read/unread tracking design spec ([a7025ba](https://github.com/heywood8/taggro/commit/a7025baed7cfeb49fbe684608bd0f8758a3de214))
+* add read/unread tracking implementation plan ([b855d17](https://github.com/heywood8/taggro/commit/b855d17b3b2c07a056ec4e6ebbb4bb780d02a09c))
+* fix read/unread spec — correct Flow type and add total unread query ([bfbf315](https://github.com/heywood8/taggro/commit/bfbf315e22cd4a99c6962fc56e4a43f16ae3c996))
+
 ## [0.6.0](https://github.com/heywood8/taggro/compare/v0.5.1...v0.6.0) (2026-03-17)
 
 
