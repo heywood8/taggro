@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/heywood8/taggro/compare/v0.7.1...v0.8.0) (2026-03-17)
+
+
+### Features
+
+* replace card dimming with separator; mark older messages read on dwell ([#24](https://github.com/heywood8/taggro/issues/24)) ([f78e149](https://github.com/heywood8/taggro/commit/f78e149e2f2b6d55954964d0dfb72f54b41573b4))
+
 ## [0.7.1](https://github.com/heywood8/taggro/compare/v0.7.0...v0.7.1) (2026-03-17)
 
 
