@@ -28,7 +28,6 @@ class ChannelViewModel @Inject constructor(
 ) : ViewModel() {
 
     val showChannelIcons: StateFlow<Boolean> = userPrefs.showChannelIcons
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val subscriptions: StateFlow<List<Subscription>> = localRepo.observeSubscriptions(FeedViewModel.USER_ID)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

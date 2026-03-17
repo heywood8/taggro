@@ -1,9 +1,9 @@
 package com.heywood8.telegramnews.data.local
 
 import android.content.SharedPreferences
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,18 +15,11 @@ class UserPreferencesRepository @Inject constructor(
         private const val KEY_SHOW_CHANNEL_ICONS = "show_channel_icons"
     }
 
-    val showChannelIcons: Flow<Boolean> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_SHOW_CHANNEL_ICONS) {
-                trySend(prefs.getBoolean(KEY_SHOW_CHANNEL_ICONS, true))
-            }
-        }
-        prefs.registerOnSharedPreferenceChangeListener(listener)
-        send(prefs.getBoolean(KEY_SHOW_CHANNEL_ICONS, true))
-        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
+    private val _showChannelIcons = MutableStateFlow(prefs.getBoolean(KEY_SHOW_CHANNEL_ICONS, true))
+    val showChannelIcons: StateFlow<Boolean> = _showChannelIcons.asStateFlow()
 
     fun setShowChannelIcons(show: Boolean) {
         prefs.edit().putBoolean(KEY_SHOW_CHANNEL_ICONS, show).apply()
+        _showChannelIcons.value = show
     }
 }

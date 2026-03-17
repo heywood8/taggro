@@ -5,9 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.heywood8.telegramnews.data.local.UserPreferencesRepository
 import com.heywood8.telegramnews.domain.repository.TelegramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,7 +16,6 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     val showChannelIcons: StateFlow<Boolean> = userPrefs.showChannelIcons
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     fun setShowChannelIcons(show: Boolean) {
         userPrefs.setShowChannelIcons(show)
