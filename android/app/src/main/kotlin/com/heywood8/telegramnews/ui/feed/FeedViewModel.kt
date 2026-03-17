@@ -92,7 +92,8 @@ class FeedViewModel @Inject constructor(
 
     fun markRead(id: Long) {
         viewModelScope.launch {
-            readMessageDao.markRead(ReadMessageEntity(id))
+            val timestamp = filteredMessages.value.find { it.id == id }?.timestamp ?: return@launch
+            readMessageDao.markReadUpTo(timestamp)
         }
     }
 

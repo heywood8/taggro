@@ -13,6 +13,9 @@ interface ReadMessageDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun markRead(entry: ReadMessageEntity)
 
+    @Query("INSERT OR IGNORE INTO read_messages (messageId) SELECT id FROM messages WHERE timestamp <= :timestamp")
+    suspend fun markReadUpTo(timestamp: Long)
+
     @Query("INSERT OR IGNORE INTO read_messages (messageId) SELECT id FROM messages WHERE channel = :channel")
     suspend fun markChannelRead(channel: String)
 
