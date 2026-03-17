@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/heywood8/taggro/compare/v0.5.0...v0.5.1) (2026-03-17)
+
+
+### Documentation
+
+* add release-please conventional commit instructions to CLAUDE.md ([#15](https://github.com/heywood8/taggro/issues/15)) ([023de9a](https://github.com/heywood8/taggro/commit/023de9a0e9737e6863f6e7792be81c1f1ad0e6c9))
+
 ## [0.5.0](https://github.com/heywood8/taggro/compare/v0.4.1...v0.5.0) (2026-03-16)
 
 
