@@ -27,7 +27,8 @@ class LocalRepositoryImpl @Inject constructor(
                     channel = entity.channel,
                     mode = entity.mode,
                     keywords = emptyList(),
-                    active = entity.active
+                    active = entity.active,
+                    includePhotos = entity.includePhotos,
                 )
             }
         }
@@ -65,5 +66,9 @@ class LocalRepositoryImpl @Inject constructor(
 
     override suspend fun updateLastSeen(channel: String, messageId: Long) {
         lastSeenDao.upsert(LastSeenEntity(channel = channel, messageId = messageId))
+    }
+
+    override suspend fun setIncludePhotos(userId: Long, channel: String, value: Boolean) {
+        subscriptionDao.setIncludePhotos(userId, channel, value)
     }
 }

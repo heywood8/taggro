@@ -4,5 +4,6 @@ data class Subscription(
     val channel: String,
     val mode: String,
     val keywords: List<String>,
-    val active: Boolean
+    val active: Boolean,
+    val includePhotos: Boolean = false,
 )

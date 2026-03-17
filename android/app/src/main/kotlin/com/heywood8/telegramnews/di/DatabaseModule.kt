@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.heywood8.telegramnews.data.local.AppDatabase
 import com.heywood8.telegramnews.data.local.MIGRATION_1_2
 import com.heywood8.telegramnews.data.local.MIGRATION_2_3
+import com.heywood8.telegramnews.data.local.MIGRATION_3_4
 import com.heywood8.telegramnews.data.local.dao.KeywordDao
 import com.heywood8.telegramnews.data.local.dao.LastSeenDao
 import com.heywood8.telegramnews.data.local.dao.MessageDao
@@ -25,7 +26,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "telegramnews.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Provides

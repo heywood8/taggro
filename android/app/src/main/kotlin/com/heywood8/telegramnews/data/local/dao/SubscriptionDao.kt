@@ -29,4 +29,7 @@ interface SubscriptionDao {
 
     @Query("SELECT COUNT(*) FROM subscriptions WHERE userId = :userId AND channel = :channel")
     suspend fun count(userId: Long, channel: String): Int
+
+    @Query("UPDATE subscriptions SET include_photos = :value WHERE userId = :userId AND channel = :channel")
+    suspend fun setIncludePhotos(userId: Long, channel: String, value: Boolean)
 }

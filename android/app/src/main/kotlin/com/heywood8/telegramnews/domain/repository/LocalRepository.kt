@@ -14,4 +14,5 @@ interface LocalRepository {
     suspend fun getActiveChannels(): List<String>
     suspend fun getLastSeen(channel: String): Long
     suspend fun updateLastSeen(channel: String, messageId: Long)
+    suspend fun setIncludePhotos(userId: Long, channel: String, value: Boolean)
 }

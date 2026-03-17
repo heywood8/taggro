@@ -21,6 +21,12 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE subscriptions ADD COLUMN include_photos INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(
     entities = [
         SubscriptionEntity::class,
@@ -29,7 +35,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         LastSeenEntity::class,
         ReadMessageEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
