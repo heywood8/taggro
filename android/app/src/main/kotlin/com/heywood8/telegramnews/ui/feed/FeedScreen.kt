@@ -23,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -37,9 +38,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.withTimeoutOrNull
@@ -53,6 +54,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +69,15 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val totalUnreadCount by viewModel.totalUnreadCount.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
+
+    // Hide separator on first scroll
+    var showSeparator by remember { mutableStateOf(true) }
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.isScrollInProgress }
+            .filter { it }
+            .first()
+        showSeparator = false
+    }
 
     // Dwell-time read detection: poll every 200ms, mark as read after 500ms continuous visibility
     val dwellStart = remember { HashMap<Long, Long>() }
@@ -170,12 +182,38 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                         )
                     }
                 } else {
+                    val unread = messages.filter { !it.isRead }
+                    val read = messages.filter { it.isRead }
                     LazyColumn(
                         state = lazyListState,
                         contentPadding = PaddingValues(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(messages, key = { it.id }) { message ->
+                        items(unread, key = { it.id }) { message ->
+                            FeedItem(
+                                message = message,
+                                showChannelIcons = showChannelIcons,
+                                onClick = { selectedMessage = message },
+                            )
+                        }
+                        if (showSeparator && read.isNotEmpty()) {
+                            item(key = "separator") {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                ) {
+                                    HorizontalDivider()
+                                    Text(
+                                        text = "Read messages",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                            }
+                        }
+                        items(read, key = { it.id }) { message ->
                             FeedItem(
                                 message = message,
                                 showChannelIcons = showChannelIcons,
@@ -200,9 +238,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
 private fun FeedItem(message: Message, showChannelIcons: Boolean, onClick: () -> Unit) {
     ElevatedCard(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(if (message.isRead) 0.6f else 1f),
+        modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

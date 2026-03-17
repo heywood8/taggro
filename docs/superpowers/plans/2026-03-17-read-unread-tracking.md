@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add persistent read/unread tracking to the feed — cards auto-mark as read after 0.5s on screen, dim to 60% opacity when read, with per-channel unread counts on filter chips and long-press to mark a channel read.
+**Goal:** Add persistent read/unread tracking to the feed — cards auto-mark as read after 0.5s on screen (also cascading to all older messages), an "Unread messages" separator divides the feed (disappears on first scroll), with per-channel unread counts on filter chips and long-press to mark a channel read.
 
-**Architecture:** A separate `read_messages` Room table (DB v3) tracks read message IDs, decoupled from the `messages` table so re-fetches never reset read state. `FeedViewModel` combines message and read-ID flows to produce `isRead`-aware `Message` objects. `FeedScreen` runs a 200ms polling loop on `LazyListState` to detect 500ms dwell time and call `viewModel.markRead(id)`.
+**Architecture:** A separate `read_messages` Room table (DB v3) tracks read message IDs, decoupled from the `messages` table so re-fetches never reset read state. `FeedViewModel` combines message and read-ID flows to produce `isRead`-aware `Message` objects. `FeedScreen` runs a 200ms polling loop on `LazyListState` to detect 500ms dwell time and calls `viewModel.markRead(id)`, which cascades to all messages with timestamp ≤ that message's timestamp via `markReadUpTo`. A session-local `showSeparator` flag controls the divider row visibility.
 
 **Tech Stack:** Kotlin, Room 2.8.4, Hilt, Jetpack Compose, kotlinx-coroutines `combine`/`flatMapLatest`
 
@@ -136,6 +136,9 @@ All paths are relative to `android/app/src/main/kotlin/com/heywood8/telegramnews
 
       @Insert(onConflict = OnConflictStrategy.IGNORE)
       suspend fun markRead(entry: ReadMessageEntity)
+
+      @Query("INSERT OR IGNORE INTO read_messages (messageId) SELECT id FROM messages WHERE timestamp <= :timestamp")
+      suspend fun markReadUpTo(timestamp: Long)
 
       @Query("INSERT OR IGNORE INTO read_messages (messageId) SELECT id FROM messages WHERE channel = :channel")
       suspend fun markChannelRead(channel: String)
@@ -439,7 +442,8 @@ All paths are relative to `android/app/src/main/kotlin/com/heywood8/telegramnews
 
       fun markRead(id: Long) {
           viewModelScope.launch {
-              readMessageDao.markRead(ReadMessageEntity(id))
+              val timestamp = filteredMessages.value.find { it.id == id }?.timestamp ?: return@launch
+              readMessageDao.markReadUpTo(timestamp)
           }
       }
 
@@ -540,7 +544,7 @@ All paths are relative to `android/app/src/main/kotlin/com/heywood8/telegramnews
 
 ## Chunk 3: UI
 
-### Task 8: Update `FeedScreen` — alpha on cards, chip badges, long-press, dwell loop
+### Task 8: Update `FeedScreen` — separator divider, chip badges, long-press, dwell loop
 
 **Files:**
 - Modify: `android/app/src/main/kotlin/com/heywood8/telegramnews/ui/feed/FeedScreen.kt`
@@ -548,10 +552,12 @@ All paths are relative to `android/app/src/main/kotlin/com/heywood8/telegramnews
 - [ ] **Step 1: Replace `FeedScreen.kt` with the updated version**
 
   Key changes:
-  - `FeedItem` gets `isRead` param → applies `Modifier.alpha(if (isRead) 0.6f else 1f)` to the card
+  - `FeedItem` has NO `Modifier.alpha` — cards render at full opacity always
+  - `showSeparator` session-local state (defaults `true`); a `LaunchedEffect` watches `lazyListState.isScrollInProgress` and sets it to `false` on first scroll
+  - `LazyColumn` splits messages into `unread`/`read` lists; inserts a "Unread messages" divider item between them when `showSeparator && read.isNotEmpty()`
   - Filter chips show unread count badge and use `Modifier.pointerInput` for long-press
   - `rememberLazyListState()` hoisted out of the column
-  - `LaunchedEffect(Unit)` polling loop for dwell-time read detection
+  - `LaunchedEffect(lazyListState)` polling loop for dwell-time read detection; marks via `viewModel.markRead(id)` which internally calls `markReadUpTo`
 
   ```kotlin
   package com.heywood8.telegramnews.ui.feed
@@ -849,12 +855,14 @@ All paths are relative to `android/app/src/main/kotlin/com/heywood8/telegramnews
   ```
 
   Check:
-  - [ ] Cards start at full opacity
-  - [ ] After 0.5s visible, a card dims to ~60% opacity
-  - [ ] Long-press a channel chip → all cards in that channel dim immediately
-  - [ ] Long-press "All" chip → all cards dim
+  - [ ] Cards render at full opacity (no dimming)
+  - [ ] "Unread messages" separator visible between unread and read sections on fresh launch
+  - [ ] After scrolling begins, separator disappears
+  - [ ] After 0.5s visible, a card (and all older cards) move below the separator to the read section
+  - [ ] Long-press a channel chip → unread count for that channel clears
+  - [ ] Long-press "All" chip → all unread counts clear
   - [ ] Unread count badge appears on chips (e.g. "BBC (3)")
-  - [ ] Kill and relaunch app → read state preserved (previously dimmed cards stay dim)
+  - [ ] Kill and relaunch app → read state preserved; separator reappears
 
 - [ ] **Step 4: Commit**
 
@@ -874,5 +882,5 @@ All three chunks complete. The feature is fully implemented:
 2. `ReadMessageDao` — idempotent mark-read operations and reactive count queries
 3. `Message.isRead` — populated in `FeedViewModel` via `combine` with read-ID set
 4. Per-channel and total unread count `StateFlow`s exposed from `FeedViewModel`
-5. `FeedScreen` 200ms dwell loop — auto-marks messages read after 500ms on screen
-6. Cards dim to 60% alpha when read; chips show badge counts; long-press marks channel/all read
+5. `FeedScreen` 200ms dwell loop — auto-marks messages read after 500ms on screen, cascading to all older messages via `markReadUpTo`
+6. "Unread messages" separator in feed (session-local, disappears on first scroll); chips show badge counts; long-press marks channel/all read; no card dimming
