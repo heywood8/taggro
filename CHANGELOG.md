@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/heywood8/taggro/compare/v0.7.0...v0.7.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* long-press on filter chips now works — use awaitFirstDown(requireUnconsumed=false) ([5e78db9](https://github.com/heywood8/taggro/commit/5e78db96b03d79177fa0f33bdd4b6450bbb39a30))
+
 ## [0.7.0](https://github.com/heywood8/taggro/compare/v0.6.0...v0.7.0) (2026-03-17)
 
 
