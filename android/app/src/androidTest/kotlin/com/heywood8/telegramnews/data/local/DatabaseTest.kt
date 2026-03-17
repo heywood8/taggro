@@ -83,8 +83,8 @@ class DatabaseTest {
     @Test
     fun insertMessages() = runTest {
         val msgs = listOf(
-            MessageEntity(id = 1L, channel = "ch", text = "hello", timestamp = 1000L),
-            MessageEntity(id = 2L, channel = "ch", text = "world", timestamp = 2000L)
+            MessageEntity(id = 1L, channel = "ch", channelTitle = "", text = "hello", timestamp = 1000L),
+            MessageEntity(id = 2L, channel = "ch", channelTitle = "", text = "world", timestamp = 2000L)
         )
         db.messageDao().insertAll(msgs)
         // Collect one emission from the Flow using first()
@@ -98,7 +98,7 @@ class DatabaseTest {
     fun pruneChannelKeepsMostRecent() = runTest {
         // Insert 3 messages, prune keeping last 2 (simulate limit=2 isn't supported, so test correctness with 3 > 0)
         val msgs = (1L..5L).map { i ->
-            MessageEntity(id = i, channel = "ch", text = "msg$i", timestamp = i * 1000L)
+            MessageEntity(id = i, channel = "ch", channelTitle = "", text = "msg$i", timestamp = i * 1000L)
         }
         db.messageDao().insertAll(msgs)
         db.messageDao().pruneChannel("ch")

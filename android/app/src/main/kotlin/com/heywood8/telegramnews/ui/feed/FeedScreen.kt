@@ -46,9 +46,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.heywood8.telegramnews.domain.model.Message
 import com.heywood8.telegramnews.ui.common.ChannelIcon
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,7 +67,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     // Dwell-time read detection: poll every 200ms, mark as read after 500ms continuous visibility
     val dwellStart = remember { HashMap<Long, Long>() }
     val markedRead = remember { HashSet<Long>() }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(lazyListState) {
         while (true) {
             delay(200)
             val now = System.currentTimeMillis()
@@ -265,11 +265,17 @@ private fun ArticleSheet(message: Message, onDismiss: () -> Unit) {
     }
 }
 
-private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-private val dateFormat = SimpleDateFormat("MMM d, HH:mm", Locale.getDefault())
+private val timeFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+private val dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MMM d, HH:mm").withZone(ZoneId.systemDefault())
 
 private fun formatTimestamp(epochSeconds: Long): String {
-    val date = Date(epochSeconds * 1000)
+    val instant = Instant.ofEpochSecond(epochSeconds)
     val now = System.currentTimeMillis()
-    return if (now - date.time < 86_400_000L) timeFormat.format(date) else dateFormat.format(date)
+    return if (now - epochSeconds * 1000 < 86_400_000L) {
+        timeFormatter.format(instant)
+    } else {
+        dateFormatter.format(instant)
+    }
 }
