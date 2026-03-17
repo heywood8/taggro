@@ -37,11 +37,15 @@ interface ReadMessageDao {
     @Query("INSERT OR IGNORE INTO read_messages (messageId) SELECT id FROM messages")
     suspend fun markAllRead()
 
+    // Room returns Flow<List<Long>>; ViewModel converts to Set for O(1) lookup
     @Query("SELECT messageId FROM read_messages")
-    fun observeReadIds(): Flow<Set<Long>>
+    fun observeReadIds(): Flow<List<Long>>
 
     @Query("SELECT COUNT(*) FROM messages WHERE channel = :channel AND id NOT IN (SELECT messageId FROM read_messages)")
     fun observeUnreadCount(channel: String): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM messages WHERE id NOT IN (SELECT messageId FROM read_messages)")
+    fun observeTotalUnreadCount(): Flow<Int>
 }
 ```
 
@@ -69,8 +73,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
 
 `FeedViewModel` changes:
 
-- **`filteredMessages`**: `combine` of `messageDao.observeAll()` + `readMessageDao.observeReadIds()` → `Message` with `isRead` set from the read ID set.
-- **`unreadCounts: StateFlow<Map<String, Int>>`**: derived from `readMessageDao.observeUnreadCount(channel)` for each active subscription, combined into a map.
+- **`filteredMessages`**: `combine` of `messageDao.observeAll()` + `readMessageDao.observeReadIds().map { it.toHashSet() }` → `Message` with `isRead` set via `id in readSet`. The Set conversion happens in the ViewModel for O(1) per-message lookup.
+- **`unreadCounts: StateFlow<Map<String, Int>>`**: uses `flatMapLatest` on the subscriptions flow to call `observeUnreadCount(channel)` per active channel, then `combine`s the per-channel flows into a `Map<String, Int>`. The "All" chip total comes from `observeTotalUnreadCount()`.
 - **`markRead(id: Long)`**: `viewModelScope.launch { readMessageDao.markRead(ReadMessageEntity(id)) }` — fire-and-forget.
 - **`markChannelRead(channel: String)`**: calls `readMessageDao.markChannelRead(channel)`.
 - **`markAllRead()`**: calls `readMessageDao.markAllRead()`.
