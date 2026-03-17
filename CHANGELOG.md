@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/heywood8/taggro/compare/v0.10.0...v0.10.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* exclude release please branch from ci ([#29](https://github.com/heywood8/taggro/issues/29)) ([71dab76](https://github.com/heywood8/taggro/commit/71dab76ea8a319d6a9417b75cbadc69a9bf6315e))
+
 ## [0.10.0](https://github.com/heywood8/taggro/compare/v0.9.0...v0.10.0) (2026-03-17)
 
 
