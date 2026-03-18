@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/heywood8/taggro/compare/v0.11.1...v0.11.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* photo toggle controls photo visibility, show caption when photos disabled ([#36](https://github.com/heywood8/taggro/issues/36)) ([4642df6](https://github.com/heywood8/taggro/commit/4642df62b7a41dcbb15dc79ed1adb9797051b57f))
+
 ## [0.11.1](https://github.com/heywood8/taggro/compare/v0.11.0...v0.11.1) (2026-03-18)
 
 
