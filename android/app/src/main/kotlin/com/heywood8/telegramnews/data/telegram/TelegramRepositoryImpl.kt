@@ -133,6 +133,7 @@ class TelegramRepositoryImpl @Inject constructor(
                 val title = chatIdToTitle[msg.chatId] ?: username
                 val text = extractText(msg.content, title)
                 val mediaType = extractMediaType(msg.content)
+                val photoFileId = extractPhotoFileId(msg.content)
                 if (text.isNotBlank() || mediaType == MediaType.PHOTO) {
                     send(
                         Message(
@@ -142,6 +143,7 @@ class TelegramRepositoryImpl @Inject constructor(
                             text = text,
                             timestamp = msg.date.toLong(),
                             mediaType = mediaType,
+                            photoFileId = photoFileId,
                         )
                     )
                 }
@@ -156,16 +158,19 @@ class TelegramRepositoryImpl @Inject constructor(
             val chat = api.sendFunctionAsync(TdApi.SearchPublicChat(channel))
             val result = api.sendFunctionAsync(TdApi.GetChatHistory(chat.id, afterMessageId, 0, 50, false))
             result.messages?.mapNotNull { msg ->
-                val rawText = extractText(msg.content, chat.title)
+                val text = extractText(msg.content, chat.title)
                 val mediaType = extractMediaType(msg.content)
-                if (rawText.isBlank() && mediaType != MediaType.PHOTO) return@mapNotNull null
+                val photoFileId = extractPhotoFileId(msg.content)
+                // Drop non-photo messages with no text
+                if (text.isBlank() && mediaType != MediaType.PHOTO) return@mapNotNull null
                 Message(
                     id = msg.id,
                     channel = channel,
                     channelTitle = chat.title,
-                    text = rawText,
+                    text = text,
                     timestamp = msg.date.toLong(),
                     mediaType = mediaType,
+                    photoFileId = photoFileId,
                 )
             } ?: emptyList()
         } catch (e: Exception) {
@@ -186,6 +191,18 @@ class TelegramRepositoryImpl @Inject constructor(
             emptyList()
         }
     }
+
+    private fun extractPhotoFileId(content: TdApi.MessageContent): Int? {
+        val sizes = (content as? TdApi.MessagePhoto)?.photo?.sizes ?: return null
+        val chosen = sizes.filter { it.width <= 1280 }.maxByOrNull { it.width }
+            ?: sizes.maxByOrNull { it.width }
+        return chosen?.photo?.id
+    }
+
+    override suspend fun downloadFile(fileId: Int): String? = try {
+        val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
+        if (file.local.isDownloadingCompleted) file.local.path else null
+    } catch (_: Exception) { null }
 
     private fun extractMediaType(content: TdApi.MessageContent): String? = when (content) {
         is TdApi.MessagePhoto -> MediaType.PHOTO
