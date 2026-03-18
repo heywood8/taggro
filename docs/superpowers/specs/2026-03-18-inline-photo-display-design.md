@@ -30,11 +30,11 @@ val photoFileId: Int? = null
 
 ### DB Migration
 
-Current DB version is 3. `MIGRATION_3_4` adds the new column:
+Current DB version is 4 (version 3→4 was claimed by the per-channel photo filter feature). `MIGRATION_4_5` adds the new column:
 ```sql
 ALTER TABLE messages ADD COLUMN photo_file_id INTEGER
 ```
-`AppDatabase` version bumps 3→4. `DatabaseModule` updated to include `MIGRATION_3_4`.
+`AppDatabase` version bumps 4→5. `DatabaseModule` updated to include `MIGRATION_4_5`.
 
 ### MediaType constant
 
