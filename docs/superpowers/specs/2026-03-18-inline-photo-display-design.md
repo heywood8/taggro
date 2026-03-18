@@ -92,7 +92,7 @@ suspend fun downloadFile(fileId: Int): String?
 
 ```kotlin
 override suspend fun downloadFile(fileId: Int): String? = try {
-    val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0, 0, true))
+    val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
     if (file.local.isDownloadingCompleted) file.local.path else null
 } catch (_: Exception) { null }
 ```
@@ -172,8 +172,9 @@ suspend fun getPhotoPath(fileId: Int): String? = telegramRepo.downloadFile(fileI
 Add to `app/build.gradle.kts`:
 ```kotlin
 implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+implementation("io.coil-kt.coil3:coil-android:3.1.0")
 ```
-(Coil 3.x; artifact ID changed from `io.coil-kt` to `io.coil-kt.coil3`.)
+(Coil 3.x; artifact ID changed from `io.coil-kt` to `io.coil-kt.coil3`. Both artifacts are required: `coil-compose` for `AsyncImage`, `coil-android` for the Android `BitmapDecoder` and file fetcher.)
 
 ### FeedItem
 
