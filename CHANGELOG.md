@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/heywood8/taggro/compare/v0.10.1...v0.11.0) (2026-03-18)
+
+
+### Features
+
+* inline photo display in feed cards and       article sheet      ([#32](https://github.com/heywood8/taggro/issues/32)) ([d60876e](https://github.com/heywood8/taggro/commit/d60876e5fd88a5fc9882f89fa474823e7b38c197))
+
 ## [0.10.1](https://github.com/heywood8/taggro/compare/v0.10.0...v0.10.1) (2026-03-17)
 
 
