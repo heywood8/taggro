@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/heywood8/taggro/compare/v0.11.0...v0.11.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* proactively send TdlibParameters to avoid race condition on init ([#34](https://github.com/heywood8/taggro/issues/34)) ([0423977](https://github.com/heywood8/taggro/commit/042397724928ac627837e8e02fb76c1facde29e5))
+
 ## [0.11.0](https://github.com/heywood8/taggro/compare/v0.10.1...v0.11.0) (2026-03-18)
 
 
