@@ -10,10 +10,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.heywood8.telegramnews.domain.model.PhotoLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     val showChannelIcons by viewModel.showChannelIcons.collectAsStateWithLifecycle()
+    val photoLayout by viewModel.photoLayout.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings") }) },
@@ -70,6 +75,34 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         checked = showChannelIcons,
                         onCheckedChange = { viewModel.setShowChannelIcons(it) },
                     )
+                },
+            )
+            ListItem(
+                headlineContent = { Text("Photo layout") },
+                supportingContent = { Text("Where to show inline photo thumbnails") },
+                modifier = Modifier.fillMaxWidth(),
+                trailingContent = {
+                    SingleChoiceSegmentedButtonRow {
+                        PhotoLayout.entries.forEachIndexed { index, layout ->
+                            SegmentedButton(
+                                selected = photoLayout == layout,
+                                onClick = { viewModel.setPhotoLayout(layout) },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = PhotoLayout.entries.size,
+                                ),
+                                label = {
+                                    Text(
+                                        when (layout) {
+                                            PhotoLayout.ABOVE -> "Above"
+                                            PhotoLayout.BELOW -> "Below"
+                                            PhotoLayout.LEFT -> "Left"
+                                        }
+                                    )
+                                },
+                            )
+                        }
+                    }
                 },
             )
             Divider()

@@ -9,6 +9,7 @@ import com.heywood8.telegramnews.data.local.entity.MessageEntity
 import com.heywood8.telegramnews.data.local.entity.ReadMessageEntity
 import com.heywood8.telegramnews.domain.model.MediaType
 import com.heywood8.telegramnews.domain.model.Message
+import com.heywood8.telegramnews.domain.model.PhotoLayout
 import com.heywood8.telegramnews.domain.model.Subscription
 import com.heywood8.telegramnews.domain.repository.LocalRepository
 import com.heywood8.telegramnews.domain.repository.TelegramRepository
@@ -46,6 +47,11 @@ class FeedViewModel @Inject constructor(
     }
 
     val showChannelIcons: StateFlow<Boolean> = userPrefs.showChannelIcons
+
+    val photoLayout: StateFlow<PhotoLayout> = userPrefs.photoLayout
+
+    // Must be called from a coroutine (e.g. produceState in a composable)
+    suspend fun getPhotoPath(fileId: Int): String? = telegramRepo.downloadFile(fileId)
 
     val subscriptions: StateFlow<List<Subscription>> = localRepo.observeSubscriptions(USER_ID)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
