@@ -43,33 +43,44 @@ class TelegramRepositoryImpl @Inject constructor(
         tdFilesDir.deleteRecursively()
     }
 
+    private fun sendTdlibParameters() {
+        scope.launch {
+            try {
+                api.sendFunctionAsync(TdApi.SetTdlibParameters().also {
+                    it.useTestDc = false
+                    it.databaseDirectory = tdDbDir.absolutePath
+                    it.filesDirectory = tdFilesDir.absolutePath
+                    it.databaseEncryptionKey = byteArrayOf()
+                    it.useFileDatabase = true
+                    it.useChatInfoDatabase = true
+                    it.useMessageDatabase = true
+                    it.useSecretChats = false
+                    it.apiId = BuildConfig.TELEGRAM_API_ID
+                    it.apiHash = BuildConfig.TELEGRAM_API_HASH
+                    it.systemLanguageCode = "en"
+                    it.deviceModel = Build.MODEL
+                    it.systemVersion = Build.VERSION.RELEASE
+                    it.applicationVersion = "1.0"
+                })
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun initTdlib() {
         api.attachClient()
+        // Send parameters immediately after attaching — authorizationStateFlow() always emits
+        // WaitTdlibParameters first, but that event can be missed if the flow collector hasn't
+        // subscribed yet when TDLib emits it (~5ms after attachClient). Sending proactively
+        // avoids the race condition.
+        sendTdlibParameters()
         val handler = CoroutineExceptionHandler { _, _ -> initTdlib() }
         scope.launch(handler) {
             api.authorizationStateFlow().collect { state ->
                 when (state) {
-                    is TdApi.AuthorizationStateWaitTdlibParameters -> {
-                        try {
-                            api.sendFunctionAsync(TdApi.SetTdlibParameters().also {
-                                it.useTestDc = false
-                                it.databaseDirectory = tdDbDir.absolutePath
-                                it.filesDirectory = tdFilesDir.absolutePath
-                                it.databaseEncryptionKey = byteArrayOf()
-                                it.useFileDatabase = true
-                                it.useChatInfoDatabase = true
-                                it.useMessageDatabase = true
-                                it.useSecretChats = false
-                                it.apiId = BuildConfig.TELEGRAM_API_ID
-                                it.apiHash = BuildConfig.TELEGRAM_API_HASH
-                                it.systemLanguageCode = "en"
-                                it.deviceModel = Build.MODEL
-                                it.systemVersion = Build.VERSION.RELEASE
-                                it.applicationVersion = "1.0"
-                            })
-                        } catch (_: Exception) {}
+                    is TdApi.AuthorizationStateClosed -> {
+                        api.attachClient()
+                        sendTdlibParameters()
                     }
-                    is TdApi.AuthorizationStateClosed -> api.attachClient()
                     else -> {}
                 }
             }
