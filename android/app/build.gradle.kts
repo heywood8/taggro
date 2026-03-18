@@ -94,6 +94,8 @@ dependencies {
 
     implementation(libs.tdktx)
     implementation(libs.work.runtime.ktx)
+    implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("io.coil-kt.coil3:coil-android:3.1.0")
     implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)

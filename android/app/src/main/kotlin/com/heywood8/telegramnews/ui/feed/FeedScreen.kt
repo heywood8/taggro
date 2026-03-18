@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -43,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -52,8 +57,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.heywood8.telegramnews.domain.model.MediaType
 import com.heywood8.telegramnews.domain.model.Message
+import com.heywood8.telegramnews.domain.model.PhotoLayout
 import com.heywood8.telegramnews.ui.common.ChannelIcon
 import java.time.Instant
 import java.time.ZoneId
@@ -72,6 +80,8 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val unreadCounts by viewModel.unreadCounts.collectAsStateWithLifecycle()
     val totalUnreadCount by viewModel.totalUnreadCount.collectAsStateWithLifecycle()
+    val photoLayout by viewModel.photoLayout.collectAsStateWithLifecycle()
+    val getPhotoPath: suspend (Int) -> String? = remember { { viewModel.getPhotoPath(it) } }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
 
@@ -198,6 +208,8 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                             FeedItem(
                                 message = message,
                                 showChannelIcons = showChannelIcons,
+                                photoLayout = photoLayout,
+                                getPhotoPath = getPhotoPath,
                                 onClick = { selectedMessage = message },
                             )
                         }
@@ -222,6 +234,8 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                             FeedItem(
                                 message = message,
                                 showChannelIcons = showChannelIcons,
+                                photoLayout = photoLayout,
+                                getPhotoPath = getPhotoPath,
                                 onClick = { selectedMessage = message },
                             )
                         }
@@ -232,6 +246,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
             if (selectedMessage != null) {
                 ArticleSheet(
                     message = selectedMessage!!,
+                    getPhotoPath = getPhotoPath,
                     onDismiss = { selectedMessage = null },
                 )
             }
@@ -240,61 +255,161 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun FeedItem(message: Message, showChannelIcons: Boolean, onClick: () -> Unit) {
+private fun FeedItem(
+    message: Message,
+    showChannelIcons: Boolean,
+    photoLayout: PhotoLayout,
+    getPhotoPath: suspend (Int) -> String?,
+    onClick: () -> Unit,
+) {
+    val photoPath by produceState<String?>(null, message.photoFileId) {
+        value = message.photoFileId?.let { getPhotoPath(it) }
+    }
+
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        when {
+            photoPath != null && photoLayout == PhotoLayout.LEFT -> {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    if (showChannelIcons) {
-                        ChannelIcon(name = message.channelTitle.ifBlank { message.channel })
-                        Spacer(modifier = Modifier.width(8.dp))
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(java.io.File(photoPath!!))
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(80.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                if (showChannelIcons) {
+                                    ChannelIcon(name = message.channelTitle.ifBlank { message.channel })
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = message.channelTitle,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            Text(
+                                text = formatTimestamp(message.timestamp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        val bodyText = buildAnnotatedString { append(message.text) }
+                        Text(
+                            text = bodyText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 8.dp),
+                            maxLines = 6,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            else -> {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (photoPath != null && photoLayout == PhotoLayout.ABOVE) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(java.io.File(photoPath!!))
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            if (showChannelIcons) {
+                                ChannelIcon(name = message.channelTitle.ifBlank { message.channel })
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text(
+                                text = message.channelTitle,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Text(
+                            text = formatTimestamp(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    val bodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && photoPath == null) {
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
+                        }
+                    } else {
+                        buildAnnotatedString { append(message.text) }
                     }
                     Text(
-                        text = message.channelTitle,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
+                        text = bodyText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp),
+                        maxLines = 6,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (photoPath != null && photoLayout == PhotoLayout.BELOW) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(java.io.File(photoPath!!))
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                                .padding(top = 8.dp),
+                        )
+                    }
                 }
-                Text(
-                    text = formatTimestamp(message.timestamp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
-            val bodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank()) {
-                buildAnnotatedString {
-                    withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
-                }
-            } else {
-                buildAnnotatedString { append(message.text) }
-            }
-            Text(
-                text = bodyText,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp),
-                maxLines = 6,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ArticleSheet(message: Message, onDismiss: () -> Unit) {
+private fun ArticleSheet(
+    message: Message,
+    getPhotoPath: suspend (Int) -> String?,
+    onDismiss: () -> Unit,
+) {
+    val photoPath by produceState<String?>(null, message.photoFileId) {
+        value = message.photoFileId?.let { getPhotoPath(it) }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -306,6 +421,19 @@ private fun ArticleSheet(message: Message, onDismiss: () -> Unit) {
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp),
         ) {
+            if (photoPath != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(java.io.File(photoPath!!))
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .padding(bottom = 12.dp),
+                )
+            }
             Text(
                 text = message.channelTitle,
                 style = MaterialTheme.typography.labelMedium,
@@ -317,7 +445,7 @@ private fun ArticleSheet(message: Message, onDismiss: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
-            val articleBodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank()) {
+            val articleBodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && photoPath == null) {
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
                 }

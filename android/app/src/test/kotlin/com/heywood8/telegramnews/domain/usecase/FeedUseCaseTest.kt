@@ -45,6 +45,7 @@ class FeedUseCaseTest {
             override suspend fun sendCode(code: String) = Unit
             override suspend fun sendPassword(password: String) = Unit
             override suspend fun logOut() = Unit
+            override suspend fun downloadFile(fileId: Int): String? = null
         }
 
     @Test

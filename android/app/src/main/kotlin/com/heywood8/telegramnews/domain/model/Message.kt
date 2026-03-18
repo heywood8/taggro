@@ -8,5 +8,6 @@ data class Message(
     val timestamp: Long,
     val mediaType: String? = null,
     val mediaUrl: String? = null,
+    val photoFileId: Int? = null,
     val isRead: Boolean = false,
 )

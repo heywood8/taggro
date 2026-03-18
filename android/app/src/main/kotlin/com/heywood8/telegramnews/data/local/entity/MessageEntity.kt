@@ -1,5 +1,6 @@
 package com.heywood8.telegramnews.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -11,5 +12,7 @@ data class MessageEntity(
     val text: String,
     val timestamp: Long,
     val mediaType: String? = null,
-    val mediaUrl: String? = null
+    val mediaUrl: String? = null,
+    @ColumnInfo(name = "photo_file_id")
+    val photoFileId: Int? = null,
 )

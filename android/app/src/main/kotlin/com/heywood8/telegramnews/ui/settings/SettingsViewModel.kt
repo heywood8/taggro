@@ -3,6 +3,7 @@ package com.heywood8.telegramnews.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.heywood8.telegramnews.data.local.UserPreferencesRepository
+import com.heywood8.telegramnews.domain.model.PhotoLayout
 import com.heywood8.telegramnews.domain.repository.TelegramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,12 @@ class SettingsViewModel @Inject constructor(
 
     fun setShowChannelIcons(show: Boolean) {
         userPrefs.setShowChannelIcons(show)
+    }
+
+    val photoLayout: StateFlow<PhotoLayout> = userPrefs.photoLayout
+
+    fun setPhotoLayout(layout: PhotoLayout) {
+        userPrefs.setPhotoLayout(layout)
     }
 
     fun logOut() {

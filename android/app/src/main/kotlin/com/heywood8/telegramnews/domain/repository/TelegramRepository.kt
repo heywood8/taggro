@@ -15,4 +15,5 @@ interface TelegramRepository {
     suspend fun sendCode(code: String)
     suspend fun sendPassword(password: String)
     suspend fun logOut()
+    suspend fun downloadFile(fileId: Int): String?
 }

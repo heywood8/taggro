@@ -3,8 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Shell Command Rules
+- Run each command separately.
 - Never use command substitution (`$(...)`) in any shell commands.
-- Never use compound commands or pipes: no `&&`, `||`, `;`, or `|`. Run each command separately.
+- Never use compound commands or pipes: no `&&`, `||`, `;`, or `|`.
 
 ## Git Commits
 - Pass commit messages directly with `-m "..."`. Never use heredoc or command substitution.

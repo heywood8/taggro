@@ -35,6 +35,7 @@ class SyncWorker @AssistedInject constructor(
                             text = msg.text,
                             timestamp = msg.timestamp,
                             mediaType = msg.mediaType,
+                            photoFileId = msg.photoFileId,
                         )
                     }
                     messageDao.insertAll(entities)
