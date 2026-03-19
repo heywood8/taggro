@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.3](https://github.com/heywood8/taggro/compare/v0.11.2...v0.11.3) (2026-03-19)
+
+
+### Bug Fixes
+
+* keywords not appearing after addition in channel settings ([#38](https://github.com/heywood8/taggro/issues/38)) ([29fabe8](https://github.com/heywood8/taggro/commit/29fabe83f36b72f99d473ace97df554b16ac42ca))
+
 ## [0.11.2](https://github.com/heywood8/taggro/compare/v0.11.1...v0.11.2) (2026-03-18)
 
 
