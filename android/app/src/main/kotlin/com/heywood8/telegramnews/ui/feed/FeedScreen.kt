@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -266,10 +267,12 @@ private fun FeedItem(
     getPhotoPath: suspend (Int) -> String?,
     onClick: () -> Unit,
 ) {
-    val photoPath by produceState<String?>(null, message.photoFileId) {
-        value = message.photoFileId?.let { getPhotoPath(it) }
+    val photoPaths by produceState<List<String>>(emptyList(), message.photoFileIds) {
+        value = message.photoFileIds.mapNotNull { getPhotoPath(it) }
     }
-    val effectivePhotoPath = if (showPhoto) photoPath else null
+    val effectivePhotoPaths = if (showPhoto) photoPaths else emptyList()
+    val firstPhotoPath = effectivePhotoPaths.firstOrNull()
+    val isAlbum = effectivePhotoPaths.size > 1
 
     ElevatedCard(
         onClick = onClick,
@@ -277,14 +280,14 @@ private fun FeedItem(
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
     ) {
         when {
-            effectivePhotoPath != null && photoLayout == PhotoLayout.LEFT -> {
+            firstPhotoPath != null && !isAlbum && photoLayout == PhotoLayout.LEFT -> {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.Top,
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(java.io.File(effectivePhotoPath!!))
+                            .data(java.io.File(firstPhotoPath))
                             .build(),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
@@ -332,17 +335,38 @@ private fun FeedItem(
             }
             else -> {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    if (effectivePhotoPath != null && photoLayout == PhotoLayout.ABOVE) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(java.io.File(effectivePhotoPath!!))
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 200.dp),
-                        )
+                    if (effectivePhotoPaths.isNotEmpty() && photoLayout == PhotoLayout.ABOVE) {
+                        if (isAlbum) {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 160.dp),
+                            ) {
+                                items(effectivePhotoPaths) { path ->
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(java.io.File(path))
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(160.dp),
+                                    )
+                                }
+                            }
+                        } else {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(java.io.File(firstPhotoPath!!))
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp),
+                            )
+                        }
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -371,7 +395,7 @@ private fun FeedItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    val bodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && effectivePhotoPath == null) {
+                    val bodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && effectivePhotoPaths.isEmpty()) {
                         buildAnnotatedString {
                             withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
                         }
@@ -385,18 +409,40 @@ private fun FeedItem(
                         maxLines = 6,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (effectivePhotoPath != null && photoLayout == PhotoLayout.BELOW) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(java.io.File(effectivePhotoPath!!))
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 200.dp)
-                                .padding(top = 8.dp),
-                        )
+                    if (effectivePhotoPaths.isNotEmpty() && photoLayout == PhotoLayout.BELOW) {
+                        if (isAlbum) {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 160.dp)
+                                    .padding(top = 8.dp),
+                            ) {
+                                items(effectivePhotoPaths) { path ->
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(java.io.File(path))
+                                            .build(),
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(160.dp),
+                                    )
+                                }
+                            }
+                        } else {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(java.io.File(firstPhotoPath!!))
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp)
+                                    .padding(top = 8.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -412,10 +458,11 @@ private fun ArticleSheet(
     getPhotoPath: suspend (Int) -> String?,
     onDismiss: () -> Unit,
 ) {
-    val photoPath by produceState<String?>(null, message.photoFileId) {
-        value = message.photoFileId?.let { getPhotoPath(it) }
+    val photoPaths by produceState<List<String>>(emptyList(), message.photoFileIds) {
+        value = message.photoFileIds.mapNotNull { getPhotoPath(it) }
     }
-    val effectivePhotoPath = if (showPhoto) photoPath else null
+    val effectivePhotoPaths = if (showPhoto) photoPaths else emptyList()
+    val isAlbum = effectivePhotoPaths.size > 1
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -428,10 +475,29 @@ private fun ArticleSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp),
         ) {
-            if (effectivePhotoPath != null) {
+            if (isAlbum) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp)
+                        .padding(bottom = 12.dp),
+                ) {
+                    items(effectivePhotoPaths) { path ->
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(java.io.File(path))
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(240.dp),
+                        )
+                    }
+                }
+            } else if (effectivePhotoPaths.isNotEmpty()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(java.io.File(effectivePhotoPath!!))
+                        .data(java.io.File(effectivePhotoPaths.first()))
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
@@ -452,7 +518,7 @@ private fun ArticleSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
-            val articleBodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && effectivePhotoPath == null) {
+            val articleBodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && effectivePhotoPaths.isEmpty()) {
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
                 }

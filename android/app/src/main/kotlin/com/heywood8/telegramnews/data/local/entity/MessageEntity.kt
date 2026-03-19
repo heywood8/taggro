@@ -15,4 +15,6 @@ data class MessageEntity(
     val mediaUrl: String? = null,
     @ColumnInfo(name = "photo_file_id")
     val photoFileId: Int? = null,
+    @ColumnInfo(name = "media_album_id")
+    val mediaAlbumId: Long? = null,
 )

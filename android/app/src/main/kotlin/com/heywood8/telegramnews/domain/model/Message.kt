@@ -10,4 +10,7 @@ data class Message(
     val mediaUrl: String? = null,
     val photoFileId: Int? = null,
     val isRead: Boolean = false,
+    val mediaAlbumId: Long? = null,
+    // All photo file IDs in the album (populated when grouping; single-photo = one entry)
+    val photoFileIds: List<Int> = emptyList(),
 )

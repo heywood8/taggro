@@ -73,6 +73,7 @@ class FeedViewModel @Inject constructor(
                     timestamp = e.timestamp,
                     mediaType = e.mediaType,
                     photoFileId = e.photoFileId,
+                    mediaAlbumId = e.mediaAlbumId,
                 )
             }
         },
@@ -82,10 +83,31 @@ class FeedViewModel @Inject constructor(
     ) { msgs, readSet, channel, subscriptionsByChannel ->
         val withRead = msgs.map { it.copy(isRead = it.id in readSet) }
         val channelFiltered = if (channel == null) withRead else withRead.filter { it.channel == channel }
-        channelFiltered.filter { message ->
+        val photoFiltered = channelFiltered.filter { message ->
             val includePhotos = subscriptionsByChannel[message.channel]?.includePhotos ?: false
             includePhotos || message.mediaType != MediaType.PHOTO || message.text.isNotBlank()
         }
+        // Group album photos: merge messages with the same mediaAlbumId into one entry
+        val albumMap = LinkedHashMap<Long, Int>() // albumId -> index in result
+        val result = mutableListOf<Message>()
+        for (msg in photoFiltered) {
+            val albumId = msg.mediaAlbumId
+            if (albumId != null) {
+                val existingIdx = albumMap[albumId]
+                if (existingIdx == null) {
+                    albumMap[albumId] = result.size
+                    result.add(msg.copy(photoFileIds = listOfNotNull(msg.photoFileId)))
+                } else {
+                    val existing = result[existingIdx]
+                    val mergedIds = existing.photoFileIds + listOfNotNull(msg.photoFileId)
+                    val mergedText = if (existing.text.isBlank() && msg.text.isNotBlank()) msg.text else existing.text
+                    result[existingIdx] = existing.copy(text = mergedText, photoFileIds = mergedIds)
+                }
+            } else {
+                result.add(msg.copy(photoFileIds = listOfNotNull(msg.photoFileId)))
+            }
+        }
+        result
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Per-channel unread counts; "All" chip uses totalUnreadCount
@@ -150,6 +172,7 @@ class FeedViewModel @Inject constructor(
                                 timestamp = msg.timestamp,
                                 mediaType = msg.mediaType,
                                 photoFileId = msg.photoFileId,
+                                mediaAlbumId = msg.mediaAlbumId,
                             )
                         })
                         messageDao.pruneChannel(sub.channel)
@@ -183,6 +206,7 @@ class FeedViewModel @Inject constructor(
                             timestamp = msg.timestamp,
                             mediaType = msg.mediaType,
                             photoFileId = msg.photoFileId,
+                            mediaAlbumId = msg.mediaAlbumId,
                         )
                     ))
                     messageDao.pruneChannel(msg.channel)
@@ -208,6 +232,7 @@ class FeedViewModel @Inject constructor(
                                 timestamp = msg.timestamp,
                                 mediaType = msg.mediaType,
                                 photoFileId = msg.photoFileId,
+                                mediaAlbumId = msg.mediaAlbumId,
                             )
                         })
                         messageDao.pruneChannel(sub.channel)
