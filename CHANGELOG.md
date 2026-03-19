@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/heywood8/taggro/compare/v0.11.3...v0.12.0) (2026-03-19)
+
+
+### Features
+
+* group album photos from the same Telegram message group ([#40](https://github.com/heywood8/taggro/issues/40)) ([d69b34d](https://github.com/heywood8/taggro/commit/d69b34d0ae7daedeaf26221399d17c30a9c919a7))
+
 ## [0.11.3](https://github.com/heywood8/taggro/compare/v0.11.2...v0.11.3) (2026-03-19)
 
 
