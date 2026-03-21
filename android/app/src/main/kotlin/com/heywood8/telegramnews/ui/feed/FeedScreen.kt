@@ -205,7 +205,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                         contentPadding = PaddingValues(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(unread, key = { it.id }) { message ->
+                        items(read.reversed(), key = { it.id }) { message ->
                             FeedItem(
                                 message = message,
                                 showChannelIcons = showChannelIcons,
@@ -215,7 +215,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                                 onClick = { selectedMessage = message },
                             )
                         }
-                        if (showSeparator && read.isNotEmpty()) {
+                        if (showSeparator && read.isNotEmpty() && unread.isNotEmpty()) {
                             item(key = "separator") {
                                 Column(
                                     modifier = Modifier
@@ -224,7 +224,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                                 ) {
                                     HorizontalDivider()
                                     Text(
-                                        text = "Read messages",
+                                        text = "New messages",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(top = 4.dp),
@@ -232,7 +232,7 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
                                 }
                             }
                         }
-                        items(read, key = { it.id }) { message ->
+                        items(unread.reversed(), key = { it.id }) { message ->
                             FeedItem(
                                 message = message,
                                 showChannelIcons = showChannelIcons,
