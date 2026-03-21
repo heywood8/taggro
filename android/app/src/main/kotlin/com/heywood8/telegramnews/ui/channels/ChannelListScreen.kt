@@ -25,8 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -75,6 +75,7 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
                 placeholder = { Text("Search channel by username") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
+                shape = MaterialTheme.shapes.large,
             )
 
             if (searching) {
@@ -85,9 +86,10 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
 
             if (searchResults.isNotEmpty()) {
                 Text(
-                    "Search results",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    "SEARCH RESULTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp),
                 )
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(searchResults) { channel ->
@@ -118,16 +120,28 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
                 }
             } else {
                 Text(
-                    "Subscribed channels",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(vertical = 4.dp),
+                    "SUBSCRIBED",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp),
                 )
                 if (subscriptions.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "No channels yet.\nSearch above to add one.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                "No channels yet",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Search above to add one",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 } else {
                     LazyColumn(
@@ -165,6 +179,28 @@ fun ChannelListScreen(viewModel: ChannelViewModel = hiltViewModel()) {
 }
 
 @Composable
+private fun ModeBadge(mode: String) {
+    val backgroundColor = when (mode) {
+        "include" -> MaterialTheme.colorScheme.tertiaryContainer
+        "exclude" -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    val textColor = when (mode) {
+        "include" -> MaterialTheme.colorScheme.onTertiaryContainer
+        "exclude" -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+    Surface(color = backgroundColor, shape = MaterialTheme.shapes.extraSmall) {
+        Text(
+            text = mode.replaceFirstChar { it.uppercase() },
+            color = textColor,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
 private fun SubscriptionItem(
     sub: Subscription,
     showIcon: Boolean,
@@ -176,24 +212,38 @@ private fun SubscriptionItem(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             if (showIcon) {
                 ChannelIcon(name = sub.channel)
                 Spacer(modifier = Modifier.width(12.dp))
             }
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text("@${sub.channel}", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "Mode: ${sub.mode}  •  Keywords: ${sub.keywords.size}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ModeBadge(mode = sub.mode)
+                    if (sub.keywords.isNotEmpty()) {
+                        Text(
+                            "${sub.keywords.size} keyword${if (sub.keywords.size == 1) "" else "s"}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Remove")
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
