@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/heywood8/taggro/compare/v0.14.0...v0.15.0) (2026-03-21)
+
+
+### Features
+
+* scroll to bottom on load and on new messages when at bottom ([#49](https://github.com/heywood8/taggro/issues/49)) ([dda63b6](https://github.com/heywood8/taggro/commit/dda63b6fc857b86f5787ce636280349a5e1bd15c))
+
 ## [0.14.0](https://github.com/heywood8/taggro/compare/v0.13.0...v0.14.0) (2026-03-21)
 
 
