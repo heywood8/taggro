@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.2](https://github.com/heywood8/taggro/compare/v0.17.1...v0.17.2) (2026-03-21)
+
+
+### Bug Fixes
+
+* scroll to oldest unread on channel switch ([#60](https://github.com/heywood8/taggro/issues/60)) ([1c69560](https://github.com/heywood8/taggro/commit/1c695601e4f63596db12a3383a4033b973ccf9a2))
+
 ## [0.17.1](https://github.com/heywood8/taggro/compare/v0.17.0...v0.17.1) (2026-03-21)
 
 
