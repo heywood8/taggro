@@ -38,6 +38,7 @@ jobs:
         run: |
           echo "TELEGRAM_API_ID=0" > android/local.properties
           echo "TELEGRAM_API_HASH=ci_placeholder" >> android/local.properties
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> android/local.properties
 
       - name: Run unit tests
         id: test
