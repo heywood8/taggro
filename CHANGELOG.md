@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/heywood8/taggro/compare/v0.17.0...v0.17.1) (2026-03-21)
+
+
+### Tests
+
+* add comprehensive unit tests for ViewModels, repositories, and preferences ([#57](https://github.com/heywood8/taggro/issues/57)) ([b8e4331](https://github.com/heywood8/taggro/commit/b8e43313690f51d0827e70586719cf8b4e811cae))
+
 ## [0.17.0](https://github.com/heywood8/taggro/compare/v0.16.1...v0.17.0) (2026-03-21)
 
 
