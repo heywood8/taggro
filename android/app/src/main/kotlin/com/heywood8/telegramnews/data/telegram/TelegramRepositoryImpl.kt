@@ -21,7 +21,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
+import kotlin.coroutines.resume
 import kotlinx.telegram.core.TelegramFlow
 import kotlinx.telegram.flows.authorizationStateFlow
 import org.drinkless.tdlib.TdApi
@@ -210,10 +212,21 @@ class TelegramRepositoryImpl @Inject constructor(
         return chosen?.photo?.id
     }
 
-    override suspend fun downloadFile(fileId: Int): String? = try {
-        val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
-        if (file.local.isDownloadingCompleted) file.local.path else null
-    } catch (_: Exception) { null }
+    override suspend fun downloadFile(fileId: Int): String? = suspendCancellableCoroutine { cont ->
+        val client = api.client
+        if (client == null) {
+            cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        client.send(TdApi.DownloadFile(fileId, 1, 0L, 0L, true)) { result ->
+            if (cont.isActive) {
+                cont.resume(
+                    if (result is TdApi.File && result.local.isDownloadingCompleted) result.local.path
+                    else null
+                )
+            }
+        }
+    }
 
     private fun extractMediaType(content: TdApi.MessageContent): String? = when (content) {
         is TdApi.MessagePhoto -> MediaType.PHOTO
