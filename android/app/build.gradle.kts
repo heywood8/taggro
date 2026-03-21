@@ -13,8 +13,12 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
-val apiId = localProps.getProperty("TELEGRAM_API_ID", "0")
-val apiHash = localProps.getProperty("TELEGRAM_API_HASH", "")
+val apiId = localProps.getProperty("TELEGRAM_API_ID")
+    ?: error("TELEGRAM_API_ID not set in local.properties")
+val apiHash = localProps.getProperty("TELEGRAM_API_HASH")
+    ?: error("TELEGRAM_API_HASH not set in local.properties")
+val botToken = localProps.getProperty("TELEGRAM_BOT_TOKEN")
+    ?: error("TELEGRAM_BOT_TOKEN not set in local.properties")
 
 android {
     namespace = "com.heywood8.telegramnews"
@@ -29,6 +33,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("int", "TELEGRAM_API_ID", apiId)
         buildConfigField("String", "TELEGRAM_API_HASH", "\"$apiHash\"")
+        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "\"$botToken\"")
         ndk {
             abiFilters += listOf("arm64-v8a")
         }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/heywood8/taggro/compare/v0.12.0...v0.13.0) (2026-03-21)
+
+
+### Features
+
+* replace user phone auth with silent bot token authentication ([#43](https://github.com/heywood8/taggro/issues/43)) ([0b2cf63](https://github.com/heywood8/taggro/commit/0b2cf63407c13cb2e22bac2d89010ccb43fa5e10))
+
 ## [0.12.0](https://github.com/heywood8/taggro/compare/v0.11.3...v0.12.0) (2026-03-19)
 
 

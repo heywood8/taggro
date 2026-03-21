@@ -1,7 +1,6 @@
 package com.heywood8.telegramnews.ui.navigation
 
 sealed class NavRoutes(val route: String) {
-    object Auth : NavRoutes("auth")
     object Main : NavRoutes("main")
 }
 
