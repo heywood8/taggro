@@ -86,6 +86,22 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
 
+    // Scroll to bottom on initial load, and on new messages if already at bottom
+    LaunchedEffect(Unit) {
+        snapshotFlow { lazyListState.layoutInfo.totalItemsCount }
+            .filter { it > 0 }
+            .first()
+        lazyListState.scrollToItem(lazyListState.layoutInfo.totalItemsCount - 1)
+    }
+    LaunchedEffect(messages.size) {
+        val layout = lazyListState.layoutInfo
+        val lastVisible = layout.visibleItemsInfo.lastOrNull()?.index ?: return@LaunchedEffect
+        val isAtBottom = lastVisible >= layout.totalItemsCount - 2
+        if (isAtBottom) {
+            lazyListState.scrollToItem(layout.totalItemsCount - 1)
+        }
+    }
+
     // Hide separator on first scroll
     var showSeparator by remember { mutableStateOf(true) }
     LaunchedEffect(lazyListState) {
