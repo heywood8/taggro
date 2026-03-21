@@ -20,6 +20,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer for breaking changes (triggers major release)
   - Scope is optional: `feat(auth): support phone login`
 
+## Debugging
+
+To check crash logs from a connected device:
+```
+adb logcat -d "*:E"
+```
+
 ## Build Commands
 
 All Gradle commands run from `android/`:
@@ -63,11 +70,17 @@ Single-module Android app (Kotlin, API 31+, Jetpack Compose + Material3).
 ### TDLib critical gotcha
 **Never use td-ktx extension functions** (`checkAuthenticationCode`, `searchPublicChat`, `getChatHistory`, `getSupergroup`, `logOut`, `setTdlibParameters`, etc.). They use `sendFunctionLaunch` internally, which fires exceptions on TDLib's `ResponseReceiver` thread — these **escape all try/catch blocks** and crash the app.
 
-Always call TDLib via:
+`api.sendFunctionAsync` is safe for calls where errors are unexpected (auth, search). But **do NOT use it when TDLib may return an error result** (e.g. file downloads, which can return "File not found"). In those cases, use `suspendCancellableCoroutine` with `api.client!!.send()` directly and handle errors in the callback by resuming with `null` rather than throwing:
+
 ```kotlin
-api.sendFunctionAsync(TdApi.CheckAuthenticationCode(code))
-api.sendFunctionAsync(TdApi.SearchPublicChat(username))
-// etc.
+suspendCancellableCoroutine { cont ->
+    val client = api.client ?: return@suspendCancellableCoroutine cont.resume(null)
+    client.send(TdApi.DownloadFile(fileId, 1, 0L, 0L, true)) { result ->
+        if (cont.isActive) {
+            cont.resume(if (result is TdApi.File && result.local.isDownloadingCompleted) result.local.path else null)
+        }
+    }
+}
 ```
 
 Add `CoroutineExceptionHandler` to every `viewModelScope.launch {}` that calls TDLib.
