@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/heywood8/taggro/compare/v0.16.1...v0.17.0) (2026-03-21)
+
+
+### Features
+
+* redesign channels page and settings sheet ([#55](https://github.com/heywood8/taggro/issues/55)) ([e431ff0](https://github.com/heywood8/taggro/commit/e431ff0dedcb29c43431003c6ec74f966b15fab6))
+
 ## [0.16.1](https://github.com/heywood8/taggro/compare/v0.16.0...v0.16.1) (2026-03-21)
 
 
