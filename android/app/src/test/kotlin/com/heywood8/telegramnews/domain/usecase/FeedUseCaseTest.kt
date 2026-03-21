@@ -40,11 +40,6 @@ class FeedUseCaseTest {
                 flowOf(*messages.toTypedArray())
             override suspend fun fetchMessagesSince(channel: String, afterMessageId: Long) = messages
             override suspend fun searchChannel(query: String): List<Channel> = emptyList()
-            override suspend fun isLoggedIn(): Boolean = true
-            override suspend fun sendPhoneNumber(phone: String) = Unit
-            override suspend fun sendCode(code: String) = Unit
-            override suspend fun sendPassword(password: String) = Unit
-            override suspend fun logOut() = Unit
             override suspend fun downloadFile(fileId: Int): String? = null
         }
 

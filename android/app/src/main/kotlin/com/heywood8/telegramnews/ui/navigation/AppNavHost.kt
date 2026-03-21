@@ -1,53 +1,40 @@
 package com.heywood8.telegramnews.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.heywood8.telegramnews.domain.model.AuthState
 import com.heywood8.telegramnews.ui.MainScreen
-import com.heywood8.telegramnews.ui.auth.AuthScreen
 
 @Composable
 fun AppNavHost(
-    navController: NavHostController = rememberNavController(),
     appViewModel: AppViewModel = hiltViewModel(),
 ) {
     val authState by appViewModel.authState.collectAsStateWithLifecycle(initialValue = AuthState.Unknown)
 
-    LaunchedEffect(authState) {
-        when (authState) {
-            AuthState.LoggedIn -> navController.navigate(NavRoutes.Main.route) {
-                popUpTo(NavRoutes.Auth.route) { inclusive = true }
+    when (authState) {
+        is AuthState.LoggedIn -> MainScreen()
+        is AuthState.Error -> {
+            val msg = (authState as AuthState.Error).message
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "Authentication error: $msg",
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
-            AuthState.LoggedOut,
-            AuthState.WaitingForPhone -> navController.navigate(NavRoutes.Auth.route) {
-                popUpTo(NavRoutes.Main.route) { inclusive = true }
+        }
+        else -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-            else -> Unit
-        }
-    }
-
-    NavHost(
-        navController = navController,
-        startDestination = NavRoutes.Auth.route,
-    ) {
-        composable(NavRoutes.Auth.route) {
-            AuthScreen(
-                onAuthSuccess = {
-                    navController.navigate(NavRoutes.Main.route) {
-                        popUpTo(NavRoutes.Auth.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-        composable(NavRoutes.Main.route) {
-            MainScreen()
         }
     }
 }

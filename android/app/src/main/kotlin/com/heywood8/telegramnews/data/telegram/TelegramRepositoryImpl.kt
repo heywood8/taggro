@@ -14,14 +14,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.telegram.core.TelegramFlow
 import kotlinx.telegram.flows.authorizationStateFlow
 import org.drinkless.tdlib.TdApi
@@ -35,6 +37,8 @@ class TelegramRepositoryImpl @Inject constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val api = TelegramFlow()
+    private val botTokenSent = AtomicBoolean(false)
+    private val _authError = MutableStateFlow<String?>(null)
     private val tdDbDir get() = File(context.filesDir, "td")
     private val tdFilesDir get() = File(context.filesDir, "td_files")
 
@@ -77,7 +81,18 @@ class TelegramRepositoryImpl @Inject constructor(
         scope.launch(handler) {
             api.authorizationStateFlow().collect { state ->
                 when (state) {
+                    is TdApi.AuthorizationStateWaitPhoneNumber -> {
+                        if (botTokenSent.getAndSet(true)) return@collect
+                        scope.launch(CoroutineExceptionHandler { _, t ->
+                            _authError.value = t.message ?: "Bot token authentication failed"
+                        }) {
+                            api.sendFunctionAsync(
+                                TdApi.CheckAuthenticationBotToken(BuildConfig.TELEGRAM_BOT_TOKEN)
+                            )
+                        }
+                    }
                     is TdApi.AuthorizationStateClosed -> {
+                        if (botTokenSent.get()) return@collect
                         api.attachClient()
                         sendTdlibParameters()
                     }
@@ -89,38 +104,17 @@ class TelegramRepositoryImpl @Inject constructor(
 
     init { initTdlib() }
 
-    override val authState: Flow<AuthState> = api.authorizationStateFlow()
-        .map { state ->
-            when (state) {
-                is TdApi.AuthorizationStateWaitPhoneNumber -> AuthState.WaitingForPhone
-                is TdApi.AuthorizationStateWaitCode -> AuthState.WaitingForCode
-                is TdApi.AuthorizationStateWaitPassword -> AuthState.WaitingForPassword
-                is TdApi.AuthorizationStateReady -> AuthState.LoggedIn
-                is TdApi.AuthorizationStateClosed,
-                is TdApi.AuthorizationStateLoggingOut -> AuthState.LoggedOut
-                else -> AuthState.Unknown
-            }
+    override val authState: Flow<AuthState> = combine(
+        api.authorizationStateFlow(),
+        _authError
+    ) { tdState, error ->
+        if (error != null) return@combine AuthState.Error(error)
+        when (tdState) {
+            is TdApi.AuthorizationStateReady -> AuthState.LoggedIn
+            is TdApi.AuthorizationStateLoggingOut -> AuthState.LoggedOut
+            else -> AuthState.Unknown
         }
-        .stateIn(scope, SharingStarted.Eagerly, AuthState.Unknown)
-
-    override suspend fun isLoggedIn(): Boolean = authState.first() is AuthState.LoggedIn
-
-    override suspend fun sendPhoneNumber(phone: String) {
-        api.sendFunctionAsync(TdApi.SetAuthenticationPhoneNumber(phone, null))
-    }
-
-    override suspend fun sendCode(code: String) {
-        api.sendFunctionAsync(TdApi.CheckAuthenticationCode(code))
-    }
-
-    override suspend fun sendPassword(password: String) {
-        api.sendFunctionAsync(TdApi.CheckAuthenticationPassword(password))
-    }
-
-    override suspend fun logOut() {
-        try { api.sendFunctionAsync(TdApi.LogOut()) } catch (_: Exception) {}
-        clearTdlibDatabase()
-    }
+    }.stateIn(scope, SharingStarted.Eagerly, AuthState.Unknown)
 
     override fun observeNewMessages(channels: List<String>): Flow<Message> = channelFlow {
         val chatIdToUsername = mutableMapOf<Long, String>()
@@ -212,10 +206,22 @@ class TelegramRepositoryImpl @Inject constructor(
         return chosen?.photo?.id
     }
 
-    override suspend fun downloadFile(fileId: Int): String? = try {
-        val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
-        if (file.local.isDownloadingCompleted) file.local.path else null
-    } catch (_: Exception) { null }
+    override suspend fun downloadFile(fileId: Int): String? {
+        // sendFunctionAsync's callback fires on TDLib's ResponseReceiver thread. If the caller's
+        // coroutine is cancelled (e.g. produceState composable disposed) before the callback fires,
+        // resuming the cancelled continuation throws on the ResponseReceiver thread, escaping all
+        // try/catch. Fix: run the call on the repository scope with a CoroutineExceptionHandler,
+        // and bridge the result via CompletableDeferred so the caller's lifecycle is irrelevant.
+        val deferred = CompletableDeferred<String?>()
+        scope.launch(CoroutineExceptionHandler { _, _ -> deferred.complete(null) }) {
+            val path = try {
+                val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
+                if (file.local.isDownloadingCompleted) file.local.path else null
+            } catch (_: Exception) { null }
+            deferred.complete(path)
+        }
+        return try { deferred.await() } catch (_: Exception) { null }
+    }
 
     private fun extractMediaType(content: TdApi.MessageContent): String? = when (content) {
         is TdApi.MessagePhoto -> MediaType.PHOTO
