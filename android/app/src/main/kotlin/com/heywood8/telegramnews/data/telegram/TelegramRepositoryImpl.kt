@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
@@ -205,10 +206,22 @@ class TelegramRepositoryImpl @Inject constructor(
         return chosen?.photo?.id
     }
 
-    override suspend fun downloadFile(fileId: Int): String? = try {
-        val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
-        if (file.local.isDownloadingCompleted) file.local.path else null
-    } catch (_: Exception) { null }
+    override suspend fun downloadFile(fileId: Int): String? {
+        // sendFunctionAsync's callback fires on TDLib's ResponseReceiver thread. If the caller's
+        // coroutine is cancelled (e.g. produceState composable disposed) before the callback fires,
+        // resuming the cancelled continuation throws on the ResponseReceiver thread, escaping all
+        // try/catch. Fix: run the call on the repository scope with a CoroutineExceptionHandler,
+        // and bridge the result via CompletableDeferred so the caller's lifecycle is irrelevant.
+        val deferred = CompletableDeferred<String?>()
+        scope.launch(CoroutineExceptionHandler { _, _ -> deferred.complete(null) }) {
+            val path = try {
+                val file = api.sendFunctionAsync(TdApi.DownloadFile(fileId, 1, 0L, 0L, true))
+                if (file.local.isDownloadingCompleted) file.local.path else null
+            } catch (_: Exception) { null }
+            deferred.complete(path)
+        }
+        return try { deferred.await() } catch (_: Exception) { null }
+    }
 
     private fun extractMediaType(content: TdApi.MessageContent): String? = when (content) {
         is TdApi.MessagePhoto -> MediaType.PHOTO
