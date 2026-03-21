@@ -40,6 +40,7 @@ jobs:
         run: |
           echo "TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}"          > android/local.properties
           echo "TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}"       >> android/local.properties
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}"     >> android/local.properties
           echo "RELEASE_STORE_FILE=release.jks"                           >> android/local.properties
           echo "RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}" >> android/local.properties
           echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}"       >> android/local.properties
