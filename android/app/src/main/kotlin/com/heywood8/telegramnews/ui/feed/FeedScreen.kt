@@ -88,14 +88,28 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
     val getPhotoPath: suspend (Int) -> String? = remember { { viewModel.getPhotoPath(it) } }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val lazyListState = rememberLazyListState()
+    var showSeparator by remember { mutableStateOf(true) }
 
-    // Scroll to bottom on initial load, and on new messages if already at bottom
-    LaunchedEffect(Unit) {
-        snapshotFlow { lazyListState.layoutInfo.totalItemsCount }
-            .filter { it > 0 }
-            .first()
-        lazyListState.scrollToItem(lazyListState.layoutInfo.totalItemsCount - 1)
+    // Scroll to correct position on initial load and channel switches:
+    // - If there are unread messages: scroll to the oldest unread so all unreads are visible
+    // - If all messages are read: scroll to the newest (bottom of the list)
+    LaunchedEffect(selectedChannel) {
+        showSeparator = true
+        val hasMessages = withTimeoutOrNull(2_000L) {
+            snapshotFlow { messages }.filter { it.isNotEmpty() }.first()
+            true
+        } ?: false
+        if (!hasMessages) return@LaunchedEffect
+        val unread = messages.filter { !it.isRead }
+        val read = messages.filter { it.isRead }
+        if (unread.isNotEmpty()) {
+            val separatorOffset = if (read.isNotEmpty()) 1 else 0
+            lazyListState.scrollToItem(read.size + separatorOffset)
+        } else {
+            lazyListState.scrollToItem(messages.size - 1)
+        }
     }
+    // Auto-scroll to bottom when new messages arrive and the user is already near the bottom
     LaunchedEffect(messages.size) {
         val layout = lazyListState.layoutInfo
         val lastVisible = layout.visibleItemsInfo.lastOrNull()?.index ?: return@LaunchedEffect
@@ -113,9 +127,9 @@ fun FeedScreen(viewModel: FeedViewModel = hiltViewModel()) {
         }
     }
 
-    // Hide separator on first scroll
-    var showSeparator by remember { mutableStateOf(true) }
-    LaunchedEffect(lazyListState) {
+    // Hide separator on first user scroll; re-arms whenever showSeparator becomes true again
+    LaunchedEffect(showSeparator) {
+        if (!showSeparator) return@LaunchedEffect
         snapshotFlow { lazyListState.isScrollInProgress }
             .filter { it }
             .first()
