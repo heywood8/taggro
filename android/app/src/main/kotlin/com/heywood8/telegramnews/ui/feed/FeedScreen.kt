@@ -31,12 +31,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -527,6 +529,7 @@ private fun ArticleSheet(
     getPhotoPath: suspend (Int) -> String?,
     onDismiss: () -> Unit,
 ) {
+    val uriHandler = LocalUriHandler.current
     val photoPaths by produceState<List<String>>(emptyList(), message.photoFileIds) {
         value = message.photoFileIds.mapNotNull { getPhotoPath(it) }
     }
@@ -599,6 +602,17 @@ private fun ArticleSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 12.dp),
             )
+            OutlinedButton(
+                onClick = {
+                    val channel = message.channel.trimStart('@')
+                    uriHandler.openUri("https://t.me/$channel/${message.id}")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+            ) {
+                Text("Open in Telegram")
+            }
         }
     }
 }
