@@ -53,9 +53,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -587,12 +590,13 @@ private fun ArticleSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp),
             )
+            val linkColor = MaterialTheme.colorScheme.primary
             val articleBodyText = if (message.mediaType == MediaType.PHOTO && message.text.isBlank() && effectivePhotoPaths.isEmpty()) {
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append("[Photo]") }
                 }
             } else {
-                buildAnnotatedString { append(message.text) }
+                buildLinkedText(message.text, linkColor)
             }
             Text(
                 text = articleBodyText,
@@ -602,6 +606,31 @@ private fun ArticleSheet(
         }
     }
 }
+
+private val urlRegex = Regex("""https?://\S+""")
+
+private fun buildLinkedText(text: String, linkColor: androidx.compose.ui.graphics.Color): androidx.compose.ui.text.AnnotatedString =
+    buildAnnotatedString {
+        var lastIndex = 0
+        for (match in urlRegex.findAll(text)) {
+            append(text.substring(lastIndex, match.range.first))
+            pushLink(
+                LinkAnnotation.Url(
+                    url = match.value,
+                    styles = TextLinkStyles(
+                        style = SpanStyle(
+                            color = linkColor,
+                            textDecoration = TextDecoration.Underline,
+                        ),
+                    ),
+                ),
+            )
+            append(match.value)
+            pop()
+            lastIndex = match.range.last + 1
+        }
+        append(text.substring(lastIndex))
+    }
 
 private val timeFormatter: DateTimeFormatter =
     DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
