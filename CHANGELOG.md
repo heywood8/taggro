@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/heywood8/taggro/compare/v0.18.0...v0.19.0) (2026-03-22)
+
+
+### Features
+
+* make URLs in article body tappable links ([#64](https://github.com/heywood8/taggro/issues/64)) ([66dd3d7](https://github.com/heywood8/taggro/commit/66dd3d71d3d9394667e852296e35be2dce4f999a))
+
 ## [0.18.0](https://github.com/heywood8/taggro/compare/v0.17.2...v0.18.0) (2026-03-22)
 
 
